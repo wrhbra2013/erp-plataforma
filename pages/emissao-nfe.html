@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emissão NF-e - ERP Fiscal</title>
+  <link rel="stylesheet" href="../static/css/default.css">
+  <link rel="stylesheet" href="../static/css/icons/bootstrap-icons.min.css">
+  <link rel="icon" type="image/x-icon" href="../static/css/favicon/favicon.ico">
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/main.js"></script>
+</head>
+<body>
+  <script>var ROOT='..';</script>
+  <script src="../components/header.js"></script>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
+    <div>
+      <h2 style="font-size:1.3rem;color:var(--heading-color);margin:0;">Emissão de NF-e</h2>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:4px 0 0;">Nota Fiscal Eletrônica com tributação CBS/IBS</p>
+    </div>
+    <button class="btn btn-primary" onclick="novaNFe()"><i class="bi bi-plus-lg"></i> Nova NF-e</button>
+  </div>
+
+  <div class="card mb-6">
+    <div class="card-header">
+      <h3 class="card-title"><i class="bi bi-clock-history"></i> NF-e Emitidas</h3>
+    </div>
+    <div class="card-body" style="padding:0;">
+      <div class="table-container" style="box-shadow:none;border-radius:0;">
+        <table>
+          <thead>
+            <tr>
+              <th>Número</th>
+              <th>Série</th>
+              <th>Cliente</th>
+              <th>Valor Total</th>
+              <th>CBS</th>
+              <th>IBS</th>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="nfeTable">
+            <tr><td colspan="9" class="text-center text-muted" style="padding:40px;"><div class="loading"><div class="spinner"></div></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="nfeModal" class="modal-overlay">
+    <div class="modal" style="max-width:800px;">
+      <div class="modal-header">
+        <h3 id="nfeModalTitle">Nova NF-e</h3>
+        <button class="modal-close" onclick="fecharModal('nfeModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="nfeForm" onsubmit="return salvarNFe(event)">
+          <input type="hidden" id="nfeId">
+          <h4 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:12px;">Dados do Destinatário</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Cliente</label>
+              <select id="nfeCliente" class="form-control">
+                <option value="">Selecione um cliente</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Número da NF-e</label>
+              <input type="text" id="nfeNumero" class="form-control" required placeholder="Ex: 000001">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Série</label>
+              <input type="text" id="nfeSerie" class="form-control" value="1">
+            </div>
+            <div class="form-group">
+              <label>Chave de Acesso</label>
+              <input type="text" id="nfeChave" class="form-control" placeholder="Gerada automaticamente">
+            </div>
+          </div>
+
+          <h4 style="font-size:0.9rem;color:var(--text-muted);margin:16px 0 12px;">Produtos/Serviços</h4>
+          <div id="nfeItensContainer">
+            <div class="nfe-item form-row-4" style="margin-bottom:8px;display:grid;grid-template-columns:3fr 1fr 1fr auto;gap:8px;">
+              <div class="form-group"><label>Produto</label>
+                <select class="form-control nfe-produto">
+                  <option value="">Selecione</option>
+                </select>
+              </div>
+              <div class="form-group"><label>Qtd</label><input type="number" class="form-control nfe-qtd" value="1" min="1"></div>
+              <div class="form-group"><label>Valor Unit.</label><input type="text" class="form-control nfe-valor" readonly></div>
+              <div style="align-self:flex-end;margin-bottom:16px;">
+                <button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()" style="padding:6px 10px;"><i class="bi bi-x"></i></button>
+              </div>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="adicionarItemNFe()" style="margin-bottom:16px;">
+            <i class="bi bi-plus-lg"></i> Adicionar Produto
+          </button>
+
+          <div class="calc-result" id="nfePreviewCalc" style="display:none;margin-bottom:16px;">
+            <h4><i class="bi bi-calculator"></i> Tributos Calculados</h4>
+            <div id="nfeTributosPreview"></div>
+          </div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+            <button type="button" class="btn btn-secondary" onclick="fecharModal('nfeModal')">Cancelar</button>
+            <button type="button" class="btn btn-warning" onclick="calcularTributosNFe()"><i class="bi bi-calculator"></i> Calcular</button>
+            <button type="submit" class="btn btn-primary">Emitir NF-e</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.getElementById('pageTitle').textContent = 'Emissão NF-e';
+  var clientes = [];
+  var produtos = [];
+
+  function carregarNFe() {
+    API.get('nfe').then(function(data) {
+      var nfes = Array.isArray(data) ? data : [];
+      var tbody = document.getElementById('nfeTable');
+      if (nfes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted" style="padding:40px;">Nenhuma NF-e emitida</td></tr>';
+        return;
+      }
+      tbody.innerHTML = nfes.map(function(n) {
+        return '<tr>' +
+          '<td><strong>' + (n.numero || '-') + '</strong></td>' +
+          '<td>' + (n.serie || '1') + '</td>' +
+          '<td>' + (n.cliente_nome || '-') + '</td>' +
+          '<td>' + formatCurrency(n.valor_total || 0) + '</td>' +
+          '<td>' + formatCurrency(n.cbs_valor || 0) + '</td>' +
+          '<td>' + formatCurrency(n.ibs_valor || 0) + '</td>' +
+          '<td>' + formatDate(n.created_at) + '</td>' +
+          '<td><span class="badge ' + ((n.status||'Pendente')==='Autorizada'?'badge-success':(n.status||'Pendente')==='Cancelada'?'badge-danger':'badge-warning') + '">' + (n.status||'Pendente') + '</span></td>' +
+          '<td><button class="btn btn-sm btn-secondary" title="Visualizar"><i class="bi bi-eye"></i></button></td>' +
+        '</tr>';
+      }).join('');
+    }).catch(function(err) {
+      document.getElementById('nfeTable').innerHTML = '<tr><td colspan="9" class="text-center text-muted" style="padding:40px;">Erro: ' + err.message + '</td></tr>';
+    });
+  }
+
+  function novaNFe() {
+    document.getElementById('nfeForm').reset();
+    document.getElementById('nfeId').value = '';
+    document.getElementById('nfePreviewCalc').style.display = 'none';
+    document.getElementById('nfeModalTitle').textContent = 'Nova NF-e';
+
+    // Load clientes and produtos for selects
+    API.get('clientes').then(function(data) {
+      clientes = Array.isArray(data) ? data : [];
+      var sel = document.getElementById('nfeCliente');
+      sel.innerHTML = '<option value="">Selecione um cliente</option>' +
+        clientes.map(function(c) {
+          return '<option value="' + c.id + '">' + (c.nome || c.razao_social || '') + ' - ' + formatCNPJ(c.cnpj || c.documento || '') + '</option>';
+        }).join('');
+    });
+
+    API.get('produtos').then(function(data) {
+      produtos = Array.isArray(data) ? data : [];
+      updateProdutoSelects();
+    });
+
+    // Check if we have a result from the tax calculator
+    try {
+      var calcRes = sessionStorage.getItem('calcResultado');
+      if (calcRes) {
+        showAlert('Cálculo tributário importado da calculadora!', 'info');
+        sessionStorage.removeItem('calcResultado');
+      }
+    } catch(e) {}
+
+    document.getElementById('nfeModal').classList.add('active');
+  }
+
+  function updateProdutoSelects() {
+    document.querySelectorAll('.nfe-produto').forEach(function(sel) {
+      sel.innerHTML = '<option value="">Selecione</option>' +
+        produtos.map(function(p) {
+          return '<option value="' + p.id + '" data-preco="' + (p.preco || 0) + '" data-codigo="' + (p.codigo || '') + '" data-ncm="' + (p.ncm || '') + '">' + (p.codigo || '') + ' - ' + (p.descricao || '') + '</option>';
+        }).join('');
+      sel.onchange = function() {
+        var opt = sel.options[sel.selectedIndex];
+        var preco = opt.getAttribute('data-preco');
+        var valorInput = sel.closest('.nfe-item').querySelector('.nfe-valor');
+        if (valorInput) valorInput.value = 'R$ ' + parseFloat(preco || 0).toFixed(2).replace('.', ',');
+      };
+    });
+  }
+
+  function adicionarItemNFe() {
+    var container = document.getElementById('nfeItensContainer');
+    var item = document.createElement('div');
+    item.className = 'nfe-item';
+    item.style.cssText = 'margin-bottom:8px;display:grid;grid-template-columns:3fr 1fr 1fr auto;gap:8px;';
+    item.innerHTML = '<div class="form-group"><select class="form-control nfe-produto"><option value="">Selecione</option></select></div>' +
+      '<div class="form-group"><input type="number" class="form-control nfe-qtd" value="1" min="1"></div>' +
+      '<div class="form-group"><input type="text" class="form-control nfe-valor" readonly></div>' +
+      '<div style="align-self:flex-end;margin-bottom:16px;"><button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()" style="padding:6px 10px;"><i class="bi bi-x"></i></button></div>';
+    container.appendChild(item);
+    // Populate the new select
+    var sel = item.querySelector('.nfe-produto');
+    sel.innerHTML = '<option value="">Selecione</option>' +
+      produtos.map(function(p) {
+        return '<option value="' + p.id + '" data-preco="' + (p.preco || 0) + '" data-codigo="' + (p.codigo || '') + '" data-ncm="' + (p.ncm || '') + '">' + (p.codigo || '') + ' - ' + (p.descricao || '') + '</option>';
+      }).join('');
+    sel.onchange = function() {
+      var opt = sel.options[sel.selectedIndex];
+      var preco = opt.getAttribute('data-preco');
+      var valorInput = sel.closest('.nfe-item').querySelector('.nfe-valor');
+      if (valorInput) valorInput.value = 'R$ ' + parseFloat(preco || 0).toFixed(2).replace('.', ',');
+    };
+  }
+
+  function calcularTributosNFe() {
+    var clienteId = document.getElementById('nfeCliente').value;
+    if (!clienteId) { showAlert('Selecione um cliente', 'warning'); return; }
+    var cliente = clientes.find(function(c) { return String(c.id) === String(clienteId); });
+    if (!cliente) { showAlert('Cliente não encontrado', 'danger'); return; }
+
+    var itens = [];
+    document.querySelectorAll('#nfeItensContainer .nfe-item').forEach(function(row) {
+      var sel = row.querySelector('.nfe-produto');
+      var opt = sel.options[sel.selectedIndex];
+      var qtd = parseInt(row.querySelector('.nfe-qtd').value) || 1;
+      var preco = parseFloat(opt.getAttribute('data-preco')) || 0;
+      if (preco > 0) {
+        itens.push({
+          codigo_produto: opt.getAttribute('data-codigo') || '000',
+          ncm: opt.getAttribute('data-ncm') || '0000.00.00',
+          valor_unitario: preco,
+          quantidade: qtd
+        });
+      }
+    });
+
+    if (itens.length === 0) { showAlert('Adicione produtos à nota', 'warning'); return; }
+
+    var payload = {
+      cnpj_emitente: cliente.documento || '00.000.000/0001-00',
+      uf_destino: cliente.uf || 'SP',
+      municipio_destino: cliente.cidade || '',
+      regime_tributario: cliente.regime_tributario || 'Lucro Presumido',
+      itens: itens
+    };
+
+    API.calcularTributos(payload).then(function(res) {
+      document.getElementById('nfePreviewCalc').style.display = 'block';
+      document.getElementById('nfeTributosPreview').innerHTML =
+        '<div class="result-item"><span class="result-label">Base de Cálculo</span><span class="result-value">' + formatCurrency(res.base_calculo || 0) + '</span></div>' +
+        '<div class="result-item"><span class="result-label">CBS (' + (((res.tributos_novos_2026||{}).cbs_aliquota||0)*100).toFixed(1) + '%)</span><span class="result-value">' + formatCurrency((res.tributos_novos_2026||{}).cbs_valor||0) + '</span></div>' +
+        '<div class="result-item"><span class="result-label">IBS (' + (((res.tributos_novos_2026||{}).ibs_aliquota||0)*100).toFixed(1) + '%)</span><span class="result-value">' + formatCurrency((res.tributos_novos_2026||{}).ibs_valor||0) + '</span></div>' +
+        '<div class="result-item" style="border-bottom:none;"><span class="result-label" style="font-weight:700;">Total Tributos</span><span class="result-value" style="font-weight:700;color:var(--brand-danger);">' + formatCurrency(((res.tributos_antigos||{}).pis||0) + ((res.tributos_antigos||{}).cofins||0) + (res.tributos_novos_2026||{}).cbs_valor + (res.tributos_novos_2026||{}).ibs_valor) + '</span></div>';
+    }).catch(function(err) {
+      showAlert('Erro no cálculo: ' + err.message, 'danger');
+    });
+  }
+
+  function salvarNFe(e) {
+    e.preventDefault();
+    showAlert('NF-e emitida com sucesso!', 'success');
+    fecharModal('nfeModal');
+    carregarNFe();
+    return false;
+  }
+
+  function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  carregarNFe();
+  </script>
+  <script src="../components/footer.js"></script>
+</body>
+</html>

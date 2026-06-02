@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Relatórios - ERP Fiscal</title>
+  <link rel="stylesheet" href="../static/css/default.css">
+  <link rel="stylesheet" href="../static/css/icons/bootstrap-icons.min.css">
+  <link rel="icon" type="image/x-icon" href="../static/css/favicon/favicon.ico">
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/main.js"></script>
+  <style>
+    .report-card {
+      background: var(--container-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--container-shadow);
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid var(--border-color);
+    }
+    .report-card:hover {
+      border-color: var(--brand-secondary);
+      box-shadow: 0 4px 12px rgba(59,130,246,0.15);
+      transform: translateY(-2px);
+    }
+    .report-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <script>var ROOT='..';</script>
+  <script src="../components/header.js"></script>
+
+  <div style="margin-bottom:20px;">
+    <h2 style="font-size:1.3rem;color:var(--heading-color);margin:0;">Relatórios</h2>
+    <p style="font-size:0.85rem;color:var(--text-muted);margin:4px 0 0;">Relatórios gerenciais e fiscais</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:24px;">
+    <div class="report-card" onclick="gerarRelatorio('faturamento')">
+      <div class="report-icon" style="background:#dbeafe;color:#1e40af;"><i class="bi bi-currency-dollar"></i></div>
+      <h4 style="font-size:1rem;margin-bottom:4px;">Faturamento</h4>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">Faturamento mensal com detalhamento de tributos CBS/IBS</p>
+    </div>
+    <div class="report-card" onclick="gerarRelatorio('tributario')">
+      <div class="report-icon" style="background:#fef3c7;color:#92400e;"><i class="bi bi-receipt"></i></div>
+      <h4 style="font-size:1rem;margin-bottom:4px;">Resumo Tributário</h4>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">Comparativo PIS/COFINS vs CBS/IBS por período</p>
+    </div>
+    <div class="report-card" onclick="gerarRelatorio('nfe')">
+      <div class="report-icon" style="background:#d1fae5;color:#065f46;"><i class="bi bi-file-earmark-text"></i></div>
+      <h4 style="font-size:1rem;margin-bottom:4px;">NF-e Emitidas</h4>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">Relatório de notas fiscais emitidas no período</p>
+    </div>
+    <div class="report-card" onclick="gerarRelatorio('clientes')">
+      <div class="report-icon" style="background:#ede9fe;color:#5b21b6;"><i class="bi bi-people"></i></div>
+      <h4 style="font-size:1rem;margin-bottom:4px;">Clientes Ativos</h4>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">Base de clientes ativos e concentração por UF</p>
+    </div>
+    <div class="report-card" onclick="gerarRelatorio('produtos')">
+      <div class="report-icon" style="background:#fce7f3;color:#9d174d;"><i class="bi bi-box"></i></div>
+      <h4 style="font-size:1rem;margin-bottom:4px;">Produtos</h4>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">Catálogo de produtos com NCM e preços</p>
+    </div>
+    <div class="report-card" onclick="gerarRelatorio('vendas')">
+      <div class="report-icon" style="background:#ecfdf5;color:#065f46;"><i class="bi bi-cart"></i></div>
+      <h4 style="font-size:1rem;margin-bottom:4px;">Vendas por Período</h4>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:0;">Histórico de vendas com filtro por data</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title"><i class="bi bi-download"></i> Relatório Gerado</h3>
+    </div>
+    <div class="card-body" id="reportOutput">
+      <p class="text-muted" style="text-align:center;padding:40px;">
+        <i class="bi bi-bar-chart" style="font-size:2rem;display:block;margin-bottom:8px;"></i>
+        Selecione um relatório acima para visualizar
+      </p>
+    </div>
+  </div>
+
+  <script>
+  document.getElementById('pageTitle').textContent = 'Relatórios';
+
+  function gerarRelatorio(tipo) {
+    var output = document.getElementById('reportOutput');
+    output.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+    var titles = {
+      faturamento: 'Relatório de Faturamento',
+      tributario: 'Resumo Tributário',
+      nfe: 'NF-e Emitidas',
+      clientes: 'Clientes Ativos',
+      produtos: 'Produtos',
+      vendas: 'Vendas por Período'
+    };
+
+    // Load data based on type
+    var p = Promise.resolve();
+    var label = '';
+
+    switch(tipo) {
+      case 'faturamento':
+        label = 'Faturamento mensal com detalhamento CBS/IBS';
+        p = API.get('vendas').then(function(v) { return Array.isArray(v) ? v : []; });
+        break;
+      case 'tributario':
+        label = 'Comparativo PIS/COFINS vs CBS/IBS';
+        p = API.get('calculos_tributos').then(function(t) { return Array.isArray(t) ? t : []; });
+        break;
+      case 'nfe':
+        label = 'Notas fiscais emitidas';
+        p = API.get('nfe').then(function(n) { return Array.isArray(n) ? n : []; });
+        break;
+      case 'clientes':
+        label = 'Base de clientes';
+        p = API.get('clientes').then(function(c) { return Array.isArray(c) ? c : []; });
+        break;
+      case 'produtos':
+        label = 'Catálogo de produtos';
+        p = API.get('produtos').then(function(pr) { return Array.isArray(pr) ? pr : []; });
+        break;
+      case 'vendas':
+        label = 'Histórico de vendas';
+        p = API.get('vendas').then(function(v) { return Array.isArray(v) ? v : []; });
+        break;
+    }
+
+    p.then(function(data) {
+      var html = '<h4 style="margin-bottom:16px;">' + titles[tipo] + '</h4>' +
+        '<p class="text-muted" style="margin-bottom:16px;">' + label + ' | Total de registros: <strong>' + data.length + '</strong></p>' +
+        '<div class="table-container"><table><thead><tr>';
+
+      if (data.length > 0) {
+        var cols = Object.keys(data[0]).filter(function(k) { return k !== 'id' && k !== 'senha'; }).slice(0, 7);
+        html += cols.map(function(c) { return '<th>' + c.replace(/_/g, ' ').toUpperCase() + '</th>'; }).join('') + '</tr></thead><tbody>';
+        data.slice(0, 50).forEach(function(row) {
+          html += '<tr>' + cols.map(function(c) {
+            var v = row[c];
+            if (v === null || v === undefined) return '<td>-</td>';
+            if (typeof v === 'number') return '<td>' + formatCurrency(v) + '</td>';
+            return '<td>' + String(v).slice(0, 50) + '</td>';
+          }).join('') + '</tr>';
+        });
+        html += '</tbody></table></div>';
+        html += '<p class="text-muted" style="margin-top:8px;font-size:0.8rem;">Exibindo até 50 registros</p>';
+      } else {
+        html += '<th>Informação</th></tr></thead><tbody><tr><td class="text-center text-muted" style="padding:40px;">Nenhum dado disponível para este relatório</td></tr></tbody></table></div>';
+      }
+
+      output.innerHTML = html;
+    }).catch(function(err) {
+      output.innerHTML = '<div class="alert alert-danger">Erro ao gerar relatório: ' + err.message + '</div>';
+    });
+  }
+  </script>
+  <script src="../components/footer.js"></script>
+</body>
+</html>

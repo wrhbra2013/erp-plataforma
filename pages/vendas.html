@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vendas - ERP Fiscal</title>
+  <link rel="stylesheet" href="../static/css/default.css">
+  <link rel="stylesheet" href="../static/css/icons/bootstrap-icons.min.css">
+  <link rel="icon" type="image/x-icon" href="../static/css/favicon/favicon.ico">
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/main.js"></script>
+</head>
+<body>
+  <script>var ROOT='..';</script>
+  <script src="../components/header.js"></script>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
+    <div>
+      <h2 style="font-size:1.3rem;color:var(--heading-color);margin:0;">Vendas</h2>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:4px 0 0;">Registro de vendas realizadas</p>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalVenda()"><i class="bi bi-plus-lg"></i> Nova Venda</button>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Cliente</th>
+          <th>Produtos</th>
+          <th>Valor Total</th>
+          <th>CBS</th>
+          <th>IBS</th>
+          <th>Data</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="vendasTable">
+        <tr><td colspan="9" class="text-center text-muted" style="padding:40px;"><div class="loading"><div class="spinner"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="vendaModal" class="modal-overlay">
+    <div class="modal" style="max-width:700px;">
+      <div class="modal-header">
+        <h3 id="vendaModalTitle">Nova Venda</h3>
+        <button class="modal-close" onclick="fecharModal('vendaModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="vendaForm" onsubmit="return salvarVenda(event)">
+          <div class="form-group">
+            <label>Cliente</label>
+            <select id="vCliente" class="form-control">
+              <option value="">Selecione</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Descrição</label>
+            <input type="text" id="vDescricao" class="form-control" placeholder="Descrição da venda">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Valor Total</label>
+              <input type="text" id="vValor" class="form-control input-currency" placeholder="R$ 0,00">
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <select id="vStatus" class="form-control">
+                <option value="Concluída">Concluída</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Cancelada">Cancelada</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+            <button type="button" class="btn btn-secondary" onclick="fecharModal('vendaModal')">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.getElementById('pageTitle').textContent = 'Vendas';
+
+  function carregarVendas() {
+    API.get('vendas').then(function(data) {
+      var vendas = Array.isArray(data) ? data : [];
+      var tbody = document.getElementById('vendasTable');
+      if (vendas.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted" style="padding:40px;">Nenhuma venda registrada</td></tr>';
+        return;
+      }
+      tbody.innerHTML = vendas.map(function(v, i) {
+        return '<tr>' +
+          '<td>' + (i+1) + '</td>' +
+          '<td><strong>' + (v.cliente_nome || '-') + '</strong></td>' +
+          '<td>' + (v.descricao || '-') + '</td>' +
+          '<td>' + formatCurrency(v.valor || 0) + '</td>' +
+          '<td>' + formatCurrency(v.cbs_valor || 0) + '</td>' +
+          '<td>' + formatCurrency(v.ibs_valor || 0) + '</td>' +
+          '<td>' + formatDate(v.created_at) + '</td>' +
+          '<td><span class="badge ' + ((v.status||'Concluída')==='Concluída'?'badge-success':(v.status||'')==='Cancelada'?'badge-danger':'badge-warning') + '">' + (v.status||'Concluída') + '</span></td>' +
+          '<td><button class="btn btn-sm btn-secondary"><i class="bi bi-eye"></i></button></td>' +
+        '</tr>';
+      }).join('');
+    }).catch(function(err) {
+      document.getElementById('vendasTable').innerHTML = '<tr><td colspan="9" class="text-center text-muted" style="padding:40px;">Erro: ' + err.message + '</td></tr>';
+    });
+  }
+
+  function abrirModalVenda() {
+    document.getElementById('vendaForm').reset();
+    document.getElementById('vendaModalTitle').textContent = 'Nova Venda';
+
+    API.get('clientes').then(function(data) {
+      var clientes = Array.isArray(data) ? data : [];
+      var sel = document.getElementById('vCliente');
+      sel.innerHTML = '<option value="">Selecione</option>' +
+        clientes.map(function(c) {
+          return '<option value="' + c.id + '">' + (c.nome || c.razao_social || '') + '</option>';
+        }).join('');
+    });
+
+    document.getElementById('vendaModal').classList.add('active');
+  }
+
+  function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  function salvarVenda(e) {
+    e.preventDefault();
+    var data = {
+      cliente_id: document.getElementById('vCliente').value,
+      descricao: document.getElementById('vDescricao').value,
+      valor: parseFloat(document.getElementById('vValor').value.replace(/[^\d,]/g,'').replace(',','.')) || 0,
+      status: document.getElementById('vStatus').value
+    };
+    API.post('vendas', data).then(function() {
+      showAlert('Venda registrada!', 'success');
+      fecharModal('vendaModal');
+      carregarVendas();
+    }).catch(function(err) { showAlert('Erro: ' + err.message, 'danger'); });
+    return false;
+  }
+
+  carregarVendas();
+  </script>
+  <script src="../components/footer.js"></script>
+</body>
+</html>

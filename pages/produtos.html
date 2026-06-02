@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produtos - ERP Fiscal</title>
+  <link rel="stylesheet" href="../static/css/default.css">
+  <link rel="stylesheet" href="../static/css/icons/bootstrap-icons.min.css">
+  <link rel="icon" type="image/x-icon" href="../static/css/favicon/favicon.ico">
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/main.js"></script>
+</head>
+<body>
+  <script>var ROOT='..';</script>
+  <script src="../components/header.js"></script>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
+    <div>
+      <h2 style="font-size:1.3rem;color:var(--heading-color);margin:0;">Produtos</h2>
+      <p style="font-size:0.85rem;color:var(--text-muted);margin:4px 0 0;">Catálogo de produtos e serviços</p>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalProduto()"><i class="bi bi-plus-lg"></i> Novo Produto</button>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Descrição</th>
+          <th>NCM</th>
+          <th>Preço Unit.</th>
+          <th>Estoque</th>
+          <th>Categoria</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="produtosTable">
+        <tr><td colspan="7" class="text-center text-muted" style="padding:40px;"><div class="loading"><div class="spinner"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="produtoModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="prodModalTitle">Novo Produto</h3>
+        <button class="modal-close" onclick="fecharModal('produtoModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="produtoForm" onsubmit="return salvarProduto(event)">
+          <input type="hidden" id="pId">
+          <div class="form-row">
+            <div class="form-group"><label>Código *</label><input type="text" id="pCodigo" class="form-control" required></div>
+            <div class="form-group"><label>Descrição *</label><input type="text" id="pDescricao" class="form-control" required></div>
+          </div>
+          <div class="form-row-3">
+            <div class="form-group"><label>NCM</label><input type="text" id="pNcm" class="form-control" placeholder="Ex: 8471.30.12"></div>
+            <div class="form-group"><label>Preço Unitário *</label><input type="text" id="pPreco" class="form-control" placeholder="0,00"></div>
+            <div class="form-group"><label>Estoque</label><input type="number" id="pEstoque" class="form-control" value="0"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Categoria</label>
+              <select id="pCategoria" class="form-control">
+                <option value="">Selecione</option>
+                <option value="Produto">Produto</option>
+                <option value="Serviço">Serviço</option>
+                <option value="Insumo">Insumo</option>
+                <option value="Matéria-Prima">Matéria-Prima</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Unidade</label>
+              <select id="pUnidade" class="form-control">
+                <option value="UN">UN (Unidade)</option>
+                <option value="KG">KG (Quilograma)</option>
+                <option value="M2">M² (Metro Quadrado)</option>
+                <option value="L">L (Litro)</option>
+                <option value="CX">CX (Caixa)</option>
+                <option value="PC">PC (Peça)</option>
+                <option value="SERV">SERV (Serviço)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+            <button type="button" class="btn btn-secondary" onclick="fecharModal('produtoModal')">Cancelar</button>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  document.getElementById('pageTitle').textContent = 'Produtos';
+
+  function carregarProdutos() {
+    API.get('produtos').then(function(data) {
+      var prods = Array.isArray(data) ? data : [];
+      var tbody = document.getElementById('produtosTable');
+      if (prods.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Nenhum produto cadastrado</td></tr>';
+        return;
+      }
+      tbody.innerHTML = prods.map(function(p) {
+        return '<tr>' +
+          '<td><strong>' + (p.codigo || '-') + '</strong></td>' +
+          '<td>' + (p.descricao || '-') + '</td>' +
+          '<td>' + (p.ncm || '-') + '</td>' +
+          '<td>' + formatCurrency(p.preco || 0) + '</td>' +
+          '<td>' + (p.estoque || 0) + '</td>' +
+          '<td><span class="badge badge-info">' + (p.categoria || 'Produto') + '</span></td>' +
+          '<td><button class="btn btn-sm btn-secondary" onclick="editarProduto(this)" data-id="' + p.id + '"><i class="bi bi-pencil"></i></button> ' +
+          '<button class="btn btn-sm btn-danger" onclick="excluirProduto(\'' + p.id + '\')"><i class="bi bi-trash"></i></button></td>' +
+        '</tr>';
+      }).join('');
+    }).catch(function(err) {
+      document.getElementById('produtosTable').innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Erro: ' + err.message + '</td></tr>';
+    });
+  }
+
+  function abrirModalProduto(data) {
+    document.getElementById('produtoForm').reset();
+    document.getElementById('pId').value = '';
+    document.getElementById('prodModalTitle').textContent = 'Novo Produto';
+    if (data) {
+      document.getElementById('prodModalTitle').textContent = 'Editar Produto';
+      document.getElementById('pId').value = data.id;
+      document.getElementById('pCodigo').value = data.codigo || '';
+      document.getElementById('pDescricao').value = data.descricao || '';
+      document.getElementById('pNcm').value = data.ncm || '';
+      document.getElementById('pPreco').value = data.preco || '';
+      document.getElementById('pEstoque').value = data.estoque || 0;
+      document.getElementById('pCategoria').value = data.categoria || '';
+      document.getElementById('pUnidade').value = data.unidade || 'UN';
+    }
+    document.getElementById('produtoModal').classList.add('active');
+  }
+
+  function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  function salvarProduto(e) {
+    e.preventDefault();
+    var id = document.getElementById('pId').value;
+    var data = {
+      codigo: document.getElementById('pCodigo').value,
+      descricao: document.getElementById('pDescricao').value,
+      ncm: document.getElementById('pNcm').value,
+      preco: parseFloat(document.getElementById('pPreco').value.replace(/[^\d,]/g,'').replace(',','.')) || 0,
+      estoque: parseInt(document.getElementById('pEstoque').value) || 0,
+      categoria: document.getElementById('pCategoria').value,
+      unidade: document.getElementById('pUnidade').value
+    };
+    var promise = id ? API.put('produtos/' + id, data) : API.post('produtos', data);
+    promise.then(function() {
+      showAlert(id ? 'Produto atualizado!' : 'Produto criado!', 'success');
+      fecharModal('produtoModal');
+      carregarProdutos();
+    }).catch(function(err) { showAlert('Erro: ' + err.message, 'danger'); });
+    return false;
+  }
+
+  function editarProduto(btn) {
+    var id = btn.getAttribute('data-id');
+    var row = btn.closest('tr');
+    var cells = row.querySelectorAll('td');
+    var prods = [];
+    API.get('produtos').then(function(data) {
+      prods = Array.isArray(data) ? data : [];
+      var p = prods.find(function(x) { return String(x.id) === String(id); });
+      if (p) abrirModalProduto(p);
+    });
+  }
+
+  function excluirProduto(id) {
+    if (!confirm('Excluir produto?')) return;
+    API.del('produtos/' + id).then(function() {
+      showAlert('Produto excluído!', 'success');
+      carregarProdutos();
+    }).catch(function(err) { showAlert('Erro: ' + err.message, 'danger'); });
+  }
+
+  carregarProdutos();
+  </script>
+  <script src="../components/footer.js"></script>
+</body>
+</html>
