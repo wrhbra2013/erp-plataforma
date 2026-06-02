@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Emissão NF-e - ERP Fiscal</title>
   <link rel="stylesheet" href="../static/css/default.css">
-  <link rel="stylesheet" href="../static/css/icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="icon" type="image/x-icon" href="../static/css/favicon/favicon.ico">
   <script src="../static/js/api.js"></script>
   <script src="../static/js/main.js"></script>
@@ -62,13 +62,13 @@
           <h4 style="font-size:0.9rem;color:var(--text-muted);margin-bottom:12px;">Dados do Destinatário</h4>
           <div class="form-row">
             <div class="form-group">
-              <label>Cliente</label>
-              <select id="nfeCliente" class="form-control">
+              <label>Cliente *</label>
+              <select id="nfeCliente" class="form-control" required>
                 <option value="">Selecione um cliente</option>
               </select>
             </div>
             <div class="form-group">
-              <label>Número da NF-e</label>
+              <label>Número da NF-e *</label>
               <input type="text" id="nfeNumero" class="form-control" required placeholder="Ex: 000001">
             </div>
           </div>
@@ -85,7 +85,7 @@
 
           <h4 style="font-size:0.9rem;color:var(--text-muted);margin:16px 0 12px;">Produtos/Serviços</h4>
           <div id="nfeItensContainer">
-            <div class="nfe-item form-row-4" style="margin-bottom:8px;display:grid;grid-template-columns:3fr 1fr 1fr auto;gap:8px;">
+            <div class="nfe-item" style="margin-bottom:8px;display:grid;grid-template-columns:3fr 1fr 1fr auto;gap:8px;">
               <div class="form-group"><label>Produto</label>
                 <select class="form-control nfe-produto">
                   <option value="">Selecione</option>
@@ -121,6 +121,7 @@
   document.getElementById('pageTitle').textContent = 'Emissão NF-e';
   var clientes = [];
   var produtos = [];
+  var ultimoCalcNFe = null;
 
   function carregarNFe() {
     API.get('nfe').then(function(data) {
@@ -140,7 +141,7 @@
           '<td>' + formatCurrency(n.ibs_valor || 0) + '</td>' +
           '<td>' + formatDate(n.created_at) + '</td>' +
           '<td><span class="badge ' + ((n.status||'Pendente')==='Autorizada'?'badge-success':(n.status||'Pendente')==='Cancelada'?'badge-danger':'badge-warning') + '">' + (n.status||'Pendente') + '</span></td>' +
-          '<td><button class="btn btn-sm btn-secondary" title="Visualizar"><i class="bi bi-eye"></i></button></td>' +
+          '<td><button class="btn btn-sm btn-danger" onclick="cancelarNFe(\'' + n.id + '\')" title="Cancelar"><i class="bi bi-x-circle"></i></button></td>' +
         '</tr>';
       }).join('');
     }).catch(function(err) {
@@ -153,8 +154,8 @@
     document.getElementById('nfeId').value = '';
     document.getElementById('nfePreviewCalc').style.display = 'none';
     document.getElementById('nfeModalTitle').textContent = 'Nova NF-e';
+    ultimoCalcNFe = null;
 
-    // Load clientes and produtos for selects
     API.get('clientes').then(function(data) {
       clientes = Array.isArray(data) ? data : [];
       var sel = document.getElementById('nfeCliente');
@@ -169,7 +170,6 @@
       updateProdutoSelects();
     });
 
-    // Check if we have a result from the tax calculator
     try {
       var calcRes = sessionStorage.getItem('calcResultado');
       if (calcRes) {
@@ -206,7 +206,6 @@
       '<div class="form-group"><input type="text" class="form-control nfe-valor" readonly></div>' +
       '<div style="align-self:flex-end;margin-bottom:16px;"><button type="button" class="btn btn-sm btn-danger" onclick="this.parentElement.parentElement.remove()" style="padding:6px 10px;"><i class="bi bi-x"></i></button></div>';
     container.appendChild(item);
-    // Populate the new select
     var sel = item.querySelector('.nfe-produto');
     sel.innerHTML = '<option value="">Selecione</option>' +
       produtos.map(function(p) {
@@ -253,12 +252,14 @@
     };
 
     API.calcularTributos(payload).then(function(res) {
+      ultimoCalcNFe = res;
       document.getElementById('nfePreviewCalc').style.display = 'block';
       document.getElementById('nfeTributosPreview').innerHTML =
         '<div class="result-item"><span class="result-label">Base de Cálculo</span><span class="result-value">' + formatCurrency(res.base_calculo || 0) + '</span></div>' +
         '<div class="result-item"><span class="result-label">CBS (' + (((res.tributos_novos_2026||{}).cbs_aliquota||0)*100).toFixed(1) + '%)</span><span class="result-value">' + formatCurrency((res.tributos_novos_2026||{}).cbs_valor||0) + '</span></div>' +
         '<div class="result-item"><span class="result-label">IBS (' + (((res.tributos_novos_2026||{}).ibs_aliquota||0)*100).toFixed(1) + '%)</span><span class="result-value">' + formatCurrency((res.tributos_novos_2026||{}).ibs_valor||0) + '</span></div>' +
         '<div class="result-item" style="border-bottom:none;"><span class="result-label" style="font-weight:700;">Total Tributos</span><span class="result-value" style="font-weight:700;color:var(--brand-danger);">' + formatCurrency(((res.tributos_antigos||{}).pis||0) + ((res.tributos_antigos||{}).cofins||0) + (res.tributos_novos_2026||{}).cbs_valor + (res.tributos_novos_2026||{}).ibs_valor) + '</span></div>';
+      showAlert('Cálculo realizado!', 'success');
     }).catch(function(err) {
       showAlert('Erro no cálculo: ' + err.message, 'danger');
     });
@@ -266,10 +267,60 @@
 
   function salvarNFe(e) {
     e.preventDefault();
-    showAlert('NF-e emitida com sucesso!', 'success');
-    fecharModal('nfeModal');
-    carregarNFe();
+    var nfeId = document.getElementById('nfeId').value;
+    var sel = document.getElementById('nfeCliente');
+    var clienteId = sel.value;
+    if (!clienteId) { showAlert('Selecione um cliente', 'warning'); return; }
+    var clienteNome = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text.split(' - ')[0] : '';
+
+    var valorTotal = 0;
+    document.querySelectorAll('#nfeItensContainer .nfe-item').forEach(function(row) {
+      var qtd = parseInt(row.querySelector('.nfe-qtd').value) || 1;
+      var valorStr = row.querySelector('.nfe-valor').value.replace(/[^\d,]/g,'').replace(',','.');
+      var preco = parseFloat(valorStr) || 0;
+      valorTotal += preco * qtd;
+    });
+
+    if (valorTotal === 0) { showAlert('Adicione produtos com valor à nota', 'warning'); return; }
+
+    var cbsValor = (ultimoCalcNFe && ultimoCalcNFe.tributos_novos_2026) ? ultimoCalcNFe.tributos_novos_2026.cbs_valor : valorTotal * 0.009;
+    var ibsValor = (ultimoCalcNFe && ultimoCalcNFe.tributos_novos_2026) ? ultimoCalcNFe.tributos_novos_2026.ibs_valor : valorTotal * 0.001;
+
+    var data = {
+      cliente_id: clienteId,
+      cliente_nome: clienteNome,
+      numero: document.getElementById('nfeNumero').value,
+      serie: document.getElementById('nfeSerie').value || '1',
+      chave: document.getElementById('nfeChave').value || ('NFE' + Date.now()),
+      valor_total: valorTotal,
+      cbs_valor: cbsValor,
+      ibs_valor: ibsValor,
+      status: 'Autorizada'
+    };
+
+    var promise = nfeId ? API.put('nfe/' + nfeId, data) : API.post('nfe', data);
+    promise.then(function() {
+      showAlert('NF-e emitida com sucesso!', 'success');
+      fecharModal('nfeModal');
+      carregarNFe();
+    }).catch(function(err) {
+      showAlert('Erro: ' + err.message, 'danger');
+    });
     return false;
+  }
+
+  function cancelarNFe(id) {
+    if (!confirm('Cancelar esta NF-e?')) return;
+    API.get('nfe/' + id).then(function(nfe) {
+      if (!nfe) { showAlert('NF-e não encontrada', 'danger'); return; }
+      nfe.status = 'Cancelada';
+      API.put('nfe/' + id, nfe).then(function() {
+        showAlert('NF-e cancelada!', 'success');
+        carregarNFe();
+      });
+    }).catch(function(err) {
+      showAlert('Erro: ' + err.message, 'danger');
+    });
   }
 
   function fecharModal(id) { document.getElementById(id).classList.remove('active'); }

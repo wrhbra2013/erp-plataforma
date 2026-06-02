@@ -16,7 +16,8 @@ var API = (function() {
     if (!r.ok) {
       if (r.status === 401) {
         localStorage.removeItem('erp_token');
-        window.location.href = 'login/';
+        localStorage.removeItem('erp_user');
+        window.location.href = (typeof ROOT !== 'undefined' ? ROOT : '.') + '/login/';
         return;
       }
       return r.json().then(function(e) { throw new Error(e.error || 'Erro na requisição'); });
@@ -28,7 +29,6 @@ var API = (function() {
     get: function(endpoint) {
       return fetch(BASE + '/' + endpoint, { headers: getHeaders() }).then(handleResponse);
     },
-
     post: function(endpoint, data) {
       return fetch(BASE + '/' + endpoint, {
         method: 'POST',
@@ -36,7 +36,6 @@ var API = (function() {
         body: JSON.stringify(data)
       }).then(handleResponse);
     },
-
     put: function(endpoint, data) {
       return fetch(BASE + '/' + endpoint, {
         method: 'PUT',
@@ -44,14 +43,12 @@ var API = (function() {
         body: JSON.stringify(data)
       }).then(handleResponse);
     },
-
     del: function(endpoint) {
       return fetch(BASE + '/' + endpoint, {
         method: 'DELETE',
         headers: getHeaders()
       }).then(handleResponse);
     },
-
     login: function(user, pass) {
       return fetch(BASE + '/auth/login', {
         method: 'POST',
@@ -66,23 +63,18 @@ var API = (function() {
         return d;
       });
     },
-
     logout: function() {
       localStorage.removeItem('erp_token');
       localStorage.removeItem('erp_user');
-      window.location.href = 'login/';
+      window.location.href = (typeof ROOT !== 'undefined' ? ROOT : '.') + '/login/';
     },
-
     getUser: function() {
       try { return JSON.parse(localStorage.getItem('erp_user')); }
       catch(e) { return null; }
     },
-
     isAuthenticated: function() {
       return !!getToken();
     },
-
-    // Tax calculator - the differentiator
     calcularTributos: function(payload) {
       return fetch(BASE + '/calculadora/tributos', {
         method: 'POST',

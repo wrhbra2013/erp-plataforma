@@ -9,29 +9,24 @@ document.write('\
 </div>\
 ');
 
-// User display
 (function() {
   var user = API.getUser();
   var ud = document.getElementById('userDisplay');
   if (ud && user) ud.textContent = user.nome || user.email || 'Usuário';
 
-  // Clock
   var clock = document.getElementById('clockDisplay');
   if (clock) {
-    function updateClock() {
-      clock.textContent = new Date().toLocaleString('pt-BR');
-    }
+    function updateClock() { clock.textContent = new Date().toLocaleString('pt-BR'); }
     updateClock();
     setInterval(updateClock, 1000);
   }
 
-  // API health check
   var statusDot = document.getElementById('statusDot');
   var statusText = document.getElementById('statusText');
   var apiStatusBadge = document.getElementById('apiStatus');
 
   function checkHealth() {
-    API.get('health').then(function(d) {
+    API.get('health').then(function() {
       if (statusDot) statusDot.className = 'status-dot online';
       if (statusText) statusText.textContent = 'API Conectada';
       if (apiStatusBadge) { apiStatusBadge.className = 'badge badge-success'; apiStatusBadge.textContent = 'Conectado'; }

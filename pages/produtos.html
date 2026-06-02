@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Produtos - ERP Fiscal</title>
   <link rel="stylesheet" href="../static/css/default.css">
-  <link rel="stylesheet" href="../static/css/icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="icon" type="image/x-icon" href="../static/css/favicon/favicon.ico">
   <script src="../static/js/api.js"></script>
   <script src="../static/js/main.js"></script>
@@ -92,30 +92,35 @@
 
   <script>
   document.getElementById('pageTitle').textContent = 'Produtos';
+  var produtos = [];
 
   function carregarProdutos() {
     API.get('produtos').then(function(data) {
-      var prods = Array.isArray(data) ? data : [];
-      var tbody = document.getElementById('produtosTable');
-      if (prods.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Nenhum produto cadastrado</td></tr>';
-        return;
-      }
-      tbody.innerHTML = prods.map(function(p) {
-        return '<tr>' +
-          '<td><strong>' + (p.codigo || '-') + '</strong></td>' +
-          '<td>' + (p.descricao || '-') + '</td>' +
-          '<td>' + (p.ncm || '-') + '</td>' +
-          '<td>' + formatCurrency(p.preco || 0) + '</td>' +
-          '<td>' + (p.estoque || 0) + '</td>' +
-          '<td><span class="badge badge-info">' + (p.categoria || 'Produto') + '</span></td>' +
-          '<td><button class="btn btn-sm btn-secondary" onclick="editarProduto(this)" data-id="' + p.id + '"><i class="bi bi-pencil"></i></button> ' +
-          '<button class="btn btn-sm btn-danger" onclick="excluirProduto(\'' + p.id + '\')"><i class="bi bi-trash"></i></button></td>' +
-        '</tr>';
-      }).join('');
+      produtos = Array.isArray(data) ? data : [];
+      renderProdutos();
     }).catch(function(err) {
       document.getElementById('produtosTable').innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Erro: ' + err.message + '</td></tr>';
     });
+  }
+
+  function renderProdutos() {
+    var tbody = document.getElementById('produtosTable');
+    if (produtos.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;">Nenhum produto cadastrado</td></tr>';
+      return;
+    }
+    tbody.innerHTML = produtos.map(function(p) {
+      return '<tr>' +
+        '<td><strong>' + (p.codigo || '-') + '</strong></td>' +
+        '<td>' + (p.descricao || '-') + '</td>' +
+        '<td>' + (p.ncm || '-') + '</td>' +
+        '<td>' + formatCurrency(p.preco || 0) + '</td>' +
+        '<td>' + (p.estoque || 0) + '</td>' +
+        '<td><span class="badge badge-info">' + (p.categoria || 'Produto') + '</span></td>' +
+        '<td><button class="btn btn-sm btn-secondary" onclick="editarProduto(\'' + p.id + '\')"><i class="bi bi-pencil"></i></button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="excluirProduto(\'' + p.id + '\')"><i class="bi bi-trash"></i></button></td>' +
+      '</tr>';
+    }).join('');
   }
 
   function abrirModalProduto(data) {
@@ -159,16 +164,9 @@
     return false;
   }
 
-  function editarProduto(btn) {
-    var id = btn.getAttribute('data-id');
-    var row = btn.closest('tr');
-    var cells = row.querySelectorAll('td');
-    var prods = [];
-    API.get('produtos').then(function(data) {
-      prods = Array.isArray(data) ? data : [];
-      var p = prods.find(function(x) { return String(x.id) === String(id); });
-      if (p) abrirModalProduto(p);
-    });
+  function editarProduto(id) {
+    var p = produtos.find(function(x) { return String(x.id) === String(id); });
+    if (p) abrirModalProduto(p);
   }
 
   function excluirProduto(id) {

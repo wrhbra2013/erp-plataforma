@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - ERP Fiscal</title>
   <link rel="stylesheet" href="static/css/default.css">
-  <link rel="stylesheet" href="static/css/icons/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="icon" type="image/x-icon" href="static/css/favicon/favicon.ico">
   <script src="static/js/api.js"></script>
   <script src="static/js/main.js"></script>
@@ -18,7 +18,7 @@
     <div class="stat-card">
       <div class="stat-card-header">
         <div class="stat-card-icon" style="background:#dbeafe;color:#1e40af;"><i class="bi bi-people"></i></div>
-        <span class="badge badge-info">+12%</span>
+        <span class="badge badge-info">Base</span>
       </div>
       <div class="stat-card-number" id="statClientes">0</div>
       <div class="stat-card-label">Clientes</div>
@@ -26,7 +26,7 @@
     <div class="stat-card">
       <div class="stat-card-header">
         <div class="stat-card-icon" style="background:#d1fae5;color:#065f46;"><i class="bi bi-box"></i></div>
-        <span class="badge badge-success">+8%</span>
+        <span class="badge badge-success">Catálogo</span>
       </div>
       <div class="stat-card-number" id="statProdutos">0</div>
       <div class="stat-card-label">Produtos</div>
@@ -34,7 +34,7 @@
     <div class="stat-card">
       <div class="stat-card-header">
         <div class="stat-card-icon" style="background:#fef3c7;color:#92400e;"><i class="bi bi-cart"></i></div>
-        <span class="badge badge-warning">+23%</span>
+        <span class="badge badge-warning">Mês</span>
       </div>
       <div class="stat-card-number" id="statVendas">0</div>
       <div class="stat-card-label">Vendas no Mês</div>
@@ -42,7 +42,7 @@
     <div class="stat-card">
       <div class="stat-card-header">
         <div class="stat-card-icon" style="background:#fee2e2;color:#991b1b;"><i class="bi bi-receipt"></i></div>
-        <span class="badge badge-danger">+5%</span>
+        <span class="badge badge-danger">Emitidas</span>
       </div>
       <div class="stat-card-number" id="statNFe">0</div>
       <div class="stat-card-label">NF-e Emitidas</div>
@@ -58,7 +58,7 @@
     <div class="stat-card">
       <div class="stat-card-header">
         <div class="stat-card-icon" style="background:#fce7f3;color:#9d174d;"><i class="bi bi-currency-dollar"></i></div>
-        <span class="badge badge-success">+18%</span>
+        <span class="badge badge-success">Receita</span>
       </div>
       <div class="stat-card-number" id="statReceita">R$ 0</div>
       <div class="stat-card-label">Receita do Mês</div>
@@ -113,7 +113,7 @@
             <tr>
               <td colspan="7" class="text-center text-muted" style="padding:40px;">
                 <i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>
-                Nenhuma NF-e encontrada. <a href="pages/emissao-nfe.html">Emitir primeira NF-e</a>
+                Nenhuma NF-e encontrada.
               </td>
             </tr>
           </tbody>
@@ -125,38 +125,58 @@
   <script>
   document.getElementById('pageTitle').textContent = 'Dashboard';
 
-  // Load stats
-  var API_BASE = 'https://api.projetosdinamicos.com.br/erp';
-
-  function countTable(endpoint, elId) {
-    var url = API_BASE + '/' + endpoint;
-    var token = localStorage.getItem('erp_token');
-    var headers = {};
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-
-    fetch(url, { headers: headers })
-      .then(function(r) { return r.ok ? r.json() : []; })
-      .then(function(data) {
-        if (data && Array.isArray(data)) {
-          var el = document.getElementById(elId);
-          if (el) el.textContent = data.length;
-        }
-      })
-      .catch(function() {});
+  function carregarStats() {
+    API.get('clientes').then(function(d) {
+      document.getElementById('statClientes').textContent = Array.isArray(d) ? d.length : 0;
+    }).catch(function(){});
+    API.get('produtos').then(function(d) {
+      document.getElementById('statProdutos').textContent = Array.isArray(d) ? d.length : 0;
+    }).catch(function(){});
+    API.get('vendas').then(function(d) {
+      var v = Array.isArray(d) ? d : [];
+      document.getElementById('statVendas').textContent = v.length;
+      var receita = v.reduce(function(s, x) { return s + (parseFloat(x.valor)||0); }, 0);
+      document.getElementById('statReceita').textContent = 'R$ ' + receita.toFixed(2).replace('.', ',');
+    }).catch(function(){});
+    API.get('nfe').then(function(d) {
+      document.getElementById('statNFe').textContent = Array.isArray(d) ? d.length : 0;
+    }).catch(function(){});
+    API.get('calculos_tributos').then(function(d) {
+      document.getElementById('statTributos').textContent = Array.isArray(d) ? d.length : 0;
+    }).catch(function(){});
   }
 
-  countTable('clientes', 'statClientes');
-  countTable('produtos', 'statProdutos');
-  countTable('vendas', 'statVendas');
-  countTable('nfe', 'statNFe');
-  countTable('calculos_tributos', 'statTributos');
+  function carregarUltimasNFe() {
+    API.get('nfe').then(function(d) {
+      var nfes = Array.isArray(d) ? d : [];
+      var tbody = document.getElementById('recentNFeTable');
+      if (nfes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px;"><i class="bi bi-inbox" style="font-size:1.5rem;display:block;margin-bottom:8px;"></i>Nenhuma NF-e encontrada. <a href="pages/emissao-nfe.html">Emitir primeira NF-e</a></td></tr>';
+        return;
+      }
+      nfes.sort(function(a,b) { return new Date(b.created_at) - new Date(a.created_at); });
+      tbody.innerHTML = nfes.slice(0, 5).map(function(n) {
+        return '<tr>' +
+          '<td><strong>' + (n.numero || '-') + '</strong></td>' +
+          '<td>' + (n.cliente_nome || '-') + '</td>' +
+          '<td>' + formatCurrency(n.valor_total || 0) + '</td>' +
+          '<td>' + formatCurrency(n.cbs_valor || 0) + '</td>' +
+          '<td>' + formatCurrency(n.ibs_valor || 0) + '</td>' +
+          '<td>' + formatDate(n.created_at) + '</td>' +
+          '<td><span class="badge ' + ((n.status||'Pendente')==='Autorizada'?'badge-success':(n.status||'Pendente')==='Cancelada'?'badge-danger':'badge-warning') + '">' + (n.status||'Pendente') + '</span></td>' +
+        '</tr>';
+      }).join('');
+    }).catch(function(){});
+  }
 
-  // Receita
   var user = API.getUser();
   if (user) {
     var ud = document.getElementById('userDisplay');
     if (ud) ud.textContent = user.nome || user.email;
   }
+
+  carregarStats();
+  carregarUltimasNFe();
   </script>
 
   <script src="components/footer.js"></script>

@@ -8,19 +8,19 @@ document.write('\
     </div>\
     <nav class="sidebar-nav">\
       <div class="nav-section">Principal</div>\
-      <a href="index.html"><i class="bi bi-grid"></i> Dashboard</a>\
+      <a href="' + ROOT + '/index.html"><i class="bi bi-grid"></i> Dashboard</a>\
       <div class="nav-section">Gestão</div>\
-      <a href="pages/clientes.html"><i class="bi bi-people"></i> Clientes</a>\
-      <a href="pages/fornecedores.html"><i class="bi bi-truck"></i> Fornecedores</a>\
-      <a href="pages/produtos.html"><i class="bi bi-box"></i> Produtos</a>\
+      <a href="' + ROOT + '/pages/clientes.html"><i class="bi bi-people"></i> Clientes</a>\
+      <a href="' + ROOT + '/pages/fornecedores.html"><i class="bi bi-truck"></i> Fornecedores</a>\
+      <a href="' + ROOT + '/pages/produtos.html"><i class="bi bi-box"></i> Produtos</a>\
       <div class="nav-section">Fiscal</div>\
-      <a href="pages/calculadora-tributos.html"><i class="bi bi-calculator"></i> Calculadora Tributária</a>\
-      <a href="pages/emissao-nfe.html"><i class="bi bi-file-earmark-text"></i> Emissão NF-e</a>\
+      <a href="' + ROOT + '/pages/calculadora-tributos.html"><i class="bi bi-calculator"></i> Calculadora Tributária</a>\
+      <a href="' + ROOT + '/pages/emissao-nfe.html"><i class="bi bi-file-earmark-text"></i> Emissão NF-e</a>\
       <div class="nav-section">Operacional</div>\
-      <a href="pages/vendas.html"><i class="bi bi-cart"></i> Vendas</a>\
-      <a href="pages/relatorios.html"><i class="bi bi-bar-chart"></i> Relatórios</a>\
+      <a href="' + ROOT + '/pages/vendas.html"><i class="bi bi-cart"></i> Vendas</a>\
+      <a href="' + ROOT + '/pages/relatorios.html"><i class="bi bi-bar-chart"></i> Relatórios</a>\
       <div class="nav-section">Sistema</div>\
-      <a href="pages/configuracoes.html"><i class="bi bi-gear"></i> Configurações</a>\
+      <a href="' + ROOT + '/pages/configuracoes.html"><i class="bi bi-gear"></i> Configurações</a>\
       <a href="#" onclick="API.logout();return false;"><i class="bi bi-box-arrow-right"></i> Sair</a>\
     </nav>\
   </aside>\
