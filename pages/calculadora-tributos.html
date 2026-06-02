@@ -239,7 +239,7 @@
       itens: itens
     };
 
-    API.calcularTributos(payload)
+    API.post('calculadora/tributos', payload)
       .then(function(res) {
         // Display result
         document.getElementById('calcResult').style.display = 'block';

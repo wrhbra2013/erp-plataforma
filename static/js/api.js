@@ -74,13 +74,6 @@ var API = (function() {
     },
     isAuthenticated: function() {
       return !!getToken();
-    },
-    calcularTributos: function(payload) {
-      return fetch(BASE + '/calculadora/tributos', {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(payload)
-      }).then(handleResponse);
     }
   };
 })();

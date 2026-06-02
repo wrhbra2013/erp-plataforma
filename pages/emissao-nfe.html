@@ -251,7 +251,7 @@
       itens: itens
     };
 
-    API.calcularTributos(payload).then(function(res) {
+    API.post('calculadora/tributos', payload).then(function(res) {
       ultimoCalcNFe = res;
       document.getElementById('nfePreviewCalc').style.display = 'block';
       document.getElementById('nfeTributosPreview').innerHTML =
