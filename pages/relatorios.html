@@ -10,6 +10,8 @@
   <link rel="icon" type="image/x-icon" href="../static/css/favicon/favicon.ico">
   <script src="../static/js/api.js"></script>
   <script src="../static/js/main.js"></script>
+  <script src="../static/js/pdfmake/pdfmake.min.js"></script>
+  <script src="../static/js/pdfmake/vfs_fonts.js"></script>
   <style>
     .report-card {
       background: var(--container-bg);
@@ -94,72 +96,94 @@
   <script>
   document.getElementById('pageTitle').textContent = 'Relatórios';
 
+  var titles = {
+    faturamento: 'Relatório de Faturamento',
+    tributario: 'Resumo Tributário',
+    nfe: 'NF-e Emitidas',
+    clientes: 'Clientes Ativos',
+    produtos: 'Produtos',
+    vendas: 'Vendas por Período'
+  };
+
+  function fetchData(tipo) {
+    switch(tipo) {
+      case 'faturamento': return API.get('vendas');
+      case 'tributario':  return API.get('calculos_tributos');
+      case 'nfe':         return API.get('nfe');
+      case 'clientes':    return API.get('clientes');
+      case 'produtos':    return API.get('produtos');
+      case 'vendas':      return API.get('vendas');
+      default: return Promise.resolve([]);
+    }
+  }
+
+  function buildTableBody(data) {
+    if (!data || data.length === 0) {
+      return { body: [['Nenhum registro disponível']], widths: ['*'] };
+    }
+    var cols = Object.keys(data[0]).filter(function(k) { return k !== 'id' && k !== 'senha'; }).slice(0, 7);
+    var body = [];
+    body.push(cols.map(function(c) { return { text: c.replace(/_/g, ' ').toUpperCase(), style: 'tableHeader' }; }));
+    data.slice(0, 100).forEach(function(row) {
+      body.push(cols.map(function(c) {
+        var v = row[c];
+        if (v === null || v === undefined) return '-';
+        if (typeof v === 'number') return { text: 'R$ ' + v.toFixed(2).replace('.', ','), alignment: 'right' };
+        return String(v).slice(0, 60);
+      }));
+    });
+    return { body: body, widths: cols.map(function() { return 'auto'; }) };
+  }
+
   function gerarRelatorio(tipo) {
+    var dt = new Date();
+    var dataStr = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR');
+    var docDef = {
+      pageSize: 'A4',
+      pageMargins: [40, 60, 40, 60],
+      header: { text: titles[tipo], style: 'header', margin: [40, 20, 40, 0] },
+      footer: { text: 'ERP Fiscal — Gerado em ' + dataStr + ' | Página {{page}} de {{pages}}', style: 'footer', alignment: 'center' },
+      content: [
+        { text: titles[tipo], style: 'title' },
+        { text: 'Gerado em: ' + dataStr, style: 'subtitle', margin: [0, 0, 0, 20] },
+        { text: 'Aguarde, carregando dados...', style: 'loading' }
+      ],
+      styles: {
+        header: { fontSize: 10, color: '#6b7280', alignment: 'center' },
+        footer: { fontSize: 8, color: '#9ca3af' },
+        title: { fontSize: 16, bold: true, color: '#1e40af' },
+        subtitle: { fontSize: 9, color: '#6b7280' },
+        loading: { fontSize: 11, color: '#9ca3af', italics: true },
+        tableHeader: { bold: true, fontSize: 8, fillColor: '#1e40af', color: '#ffffff', alignment: 'center', margin: [4, 4] }
+      },
+      defaultStyle: { fontSize: 8 }
+    };
+
     var output = document.getElementById('reportOutput');
     output.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
 
-    var titles = {
-      faturamento: 'Relatório de Faturamento',
-      tributario: 'Resumo Tributário',
-      nfe: 'NF-e Emitidas',
-      clientes: 'Clientes Ativos',
-      produtos: 'Produtos',
-      vendas: 'Vendas por Período'
-    };
-
-    // Load data based on type
-    var p = Promise.resolve();
-    var label = '';
-
-    switch(tipo) {
-      case 'faturamento':
-        label = 'Faturamento mensal com detalhamento CBS/IBS';
-        p = API.get('vendas').then(function(v) { return Array.isArray(v) ? v : []; });
-        break;
-      case 'tributario':
-        label = 'Comparativo PIS/COFINS vs CBS/IBS';
-        p = API.get('calculos_tributos').then(function(t) { return Array.isArray(t) ? t : []; });
-        break;
-      case 'nfe':
-        label = 'Notas fiscais emitidas';
-        p = API.get('nfe').then(function(n) { return Array.isArray(n) ? n : []; });
-        break;
-      case 'clientes':
-        label = 'Base de clientes';
-        p = API.get('clientes').then(function(c) { return Array.isArray(c) ? c : []; });
-        break;
-      case 'produtos':
-        label = 'Catálogo de produtos';
-        p = API.get('produtos').then(function(pr) { return Array.isArray(pr) ? pr : []; });
-        break;
-      case 'vendas':
-        label = 'Histórico de vendas';
-        p = API.get('vendas').then(function(v) { return Array.isArray(v) ? v : []; });
-        break;
-    }
-
-    p.then(function(data) {
-      var html = '<h4 style="margin-bottom:16px;">' + titles[tipo] + '</h4>' +
-        '<p class="text-muted" style="margin-bottom:16px;">' + label + ' | Total de registros: <strong>' + data.length + '</strong></p>' +
-        '<div class="table-container"><table><thead><tr>';
-
-      if (data.length > 0) {
-        var cols = Object.keys(data[0]).filter(function(k) { return k !== 'id' && k !== 'senha'; }).slice(0, 7);
-        html += cols.map(function(c) { return '<th>' + c.replace(/_/g, ' ').toUpperCase() + '</th>'; }).join('') + '</tr></thead><tbody>';
-        data.slice(0, 50).forEach(function(row) {
-          html += '<tr>' + cols.map(function(c) {
-            var v = row[c];
-            if (v === null || v === undefined) return '<td>-</td>';
-            if (typeof v === 'number') return '<td>' + formatCurrency(v) + '</td>';
-            return '<td>' + String(v).slice(0, 50) + '</td>';
-          }).join('') + '</tr>';
-        });
-        html += '</tbody></table></div>';
-        html += '<p class="text-muted" style="margin-top:8px;font-size:0.8rem;">Exibindo até 50 registros</p>';
-      } else {
-        html += '<th>Informação</th></tr></thead><tbody><tr><td class="text-center text-muted" style="padding:40px;">Nenhum dado disponível para este relatório</td></tr></tbody></table></div>';
+    fetchData(tipo).then(function(data) {
+      data = Array.isArray(data) ? data : [];
+      var table = buildTableBody(data);
+      docDef.content = [
+        { text: titles[tipo], style: 'title' },
+        { text: dataStr, style: 'subtitle', margin: [0, 0, 0, 20] },
+        { text: 'Total de registros: ' + data.length, style: 'subtitle', margin: [0, 0, 0, 10] },
+        { table: table, layout: 'lightHorizontalLines', margin: [0, 0, 0, 20] }
+      ];
+      if (data.length > 100) {
+        docDef.content.push(
+          { text: '* Exibindo os primeiros 100 registros. Total: ' + data.length, style: 'subtitle', italics: true }
+        );
       }
 
+      pdfMake.createPdf(docDef).download(tipo + '_' + dt.getTime() + '.pdf');
+
+      // Show preview
+      var html = '<h4 style="margin-bottom:16px;">' + titles[tipo] + '</h4>' +
+        '<p class="text-muted" style="margin-bottom:16px;">PDF gerado com sucesso! <strong>' + data.length + ' registros</strong></p>' +
+        '<div style="text-align:center;padding:20px;"><i class="bi bi-filetype-pdf" style="font-size:3rem;color:var(--brand-danger);display:block;margin-bottom:8px;"></i>' +
+        '<p>O download do PDF foi iniciado automaticamente.</p></div>';
       output.innerHTML = html;
     }).catch(function(err) {
       output.innerHTML = '<div class="alert alert-danger">Erro ao gerar relatório: ' + err.message + '</div>';
