@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MeuERP - Sistema de Gestão</title>
+<style>
+:root{
+  --primary:#2563eb; --primary-dark:#1e40af; --danger:#dc2626; --danger-dark:#b91c1c;
+  --success:#16a34a; --bg:#f1f5f9; --panel:#ffffff; --border:#cbd5e1; --text:#0f172a; --muted:#64748b;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--text);}
+button{font-family:inherit; cursor:pointer;}
+input,select{font-family:inherit; font-size:14px; padding:7px 10px; border:1px solid var(--border); border-radius:6px; outline:none;}
+input:focus,select:focus{border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,.15);}
+
+#loginView{min-height:100vh; display:flex; align-items:center; justify-content:center;}
+.login-card{background:var(--panel); padding:40px 48px; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,.12); width:360px;}
+.login-card h1{font-size:22px; margin-bottom:4px;}
+.login-card .sub{color:var(--muted); margin-bottom:24px;}
+.login-card label{display:block; font-size:13px; margin:12px 0 4px; color:var(--text);}
+.login-card input{width:100%;}
+.login-card button{width:100%; margin-top:20px;}
+
+#app{display:none;}
+header{background:var(--primary); color:#fff; padding:0 16px; height:56px; display:flex; align-items:center; gap:16px;}
+header .brand{font-size:18px; font-weight:600; white-space:nowrap;}
+nav{display:flex; gap:2px; overflow-x:auto;}
+.dropdown{position:relative;}
+.dropdown>a{padding:8px 14px;}
+.dropdown>a{color:#dbeafe; text-decoration:none; border-radius:6px; font-size:14px; cursor:pointer;}
+.dropdown>a:hover{background:rgba(255,255,255,.15);}
+.dropdown-menu{display:none; position:absolute; top:100%; left:0; background:var(--panel); color:var(--text); border-radius:8px; box-shadow:0 8px 30px rgba(0,0,0,.15); min-width:200px; z-index:60; overflow:hidden;}
+.dropdown:hover .dropdown-menu{display:block;}
+.dropdown-menu a{display:block; padding:10px 16px; color:var(--text); text-decoration:none; font-size:14px;}
+.dropdown-menu a:hover{background:var(--bg);}
+.dropdown-menu a.active{background:#dbeafe; color:var(--primary); font-weight:600;}
+.toplink{color:#dbeafe; text-decoration:none; padding:8px 12px; border-radius:6px; font-size:14px; cursor:pointer;}
+.toplink:hover{background:rgba(255,255,255,.15);}
+.toplink.active{background:#fff; color:var(--primary); font-weight:600;}
+.header-right{margin-left:auto; display:flex; align-items:center; gap:12px; font-size:14px;}
+.header-right button{background:transparent; color:#fff; border:1px solid #fff; border-radius:6px; padding:5px 12px;}
+main{padding:24px; max-width:1200px; margin:0 auto;}
+
+.panel{background:var(--panel); border-radius:10px; box-shadow:0 1px 3px rgba(0,0,0,.08); overflow:hidden;}
+.toolbar{display:flex; gap:8px; padding:12px 16px; border-bottom:1px solid var(--border); background:#f8fafc; flex-wrap:wrap; align-items:center;}
+.btn{border:none; border-radius:6px; padding:8px 16px; font-size:14px; color:#fff; background:var(--primary);}
+.btn:hover{background:var(--primary-dark);}
+.btn.danger{background:var(--danger);}
+.btn.danger:hover{background:var(--danger-dark);}
+.btn.ghost{background:#fff; color:var(--text); border:1px solid var(--border);}
+.btn.ghost:hover{background:var(--bg);}
+.btn.small{padding:5px 10px; font-size:13px;}
+.btn[disabled]{opacity:.5; cursor:not-allowed;}
+
+table{width:100%; border-collapse:collapse; font-size:14px;}
+th,td{text-align:left; padding:10px 14px; border-bottom:1px solid var(--border);}
+th{background:#f8fafc; color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.03em; white-space:nowrap;}
+tbody tr:hover{background:#f8fafc; cursor:pointer;}
+tbody tr.selected{background:#dbeafe;}
+td.num{text-align:right;}
+th.num{text-align:right;}
+.empty{padding:40px; text-align:center; color:var(--muted);}
+
+.modal-backdrop{position:fixed; inset:0; background:rgba(15,23,42,.5); display:none; align-items:center; justify-content:center; z-index:70;}
+.modal-backdrop.show{display:flex;}
+.modal{background:var(--panel); border-radius:12px; padding:24px 28px; width:600px; max-width:94vw; max-height:90vh; overflow:auto; box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal h2{font-size:18px; margin-bottom:18px;}
+.modal .form-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+.modal .form-grid .full{grid-column:1 / -1;}
+.modal label{display:block; font-size:13px; margin-bottom:4px; color:var(--text);}
+.modal input,.modal select{width:100%;}
+.modal .modal-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:20px;}
+.form-hint{font-size:12px; color:var(--muted); margin-top:4px;}
+
+#toast{position:fixed; bottom:24px; right:24px; padding:14px 20px; border-radius:8px; color:#fff; box-shadow:0 6px 20px rgba(0,0,0,.2); display:none; z-index:100;}
+#toast.success{background:var(--success);}
+#toast.error{background:var(--danger);}
+
+.total-bar{display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-top:1px solid var(--border); font-size:16px; font-weight:600; background:#f8fafc;}
+.welcome{text-align:center; padding:80px 20px; color:var(--muted); font-size:18px; line-height:1.6;}
+.pedido-form-row{display:flex; gap:12px; align-items:flex-end; margin-bottom:16px; flex-wrap:wrap;}
+.pedido-form-row .field{display:flex; flex-direction:column; gap:4px; font-size:13px;}
+.pedido-itens-total{display:flex; justify-content:space-between; align-items:center; padding:14px; background:#f8fafc; border-top:1px solid var(--border); font-weight:600; font-size:15px;}
+.subtabs{display:flex; gap:6px; padding:12px 16px; border-bottom:1px solid var(--border); background:#f8fafc;}
+.subtabs button{border:1px solid var(--border); background:#fff; border-radius:6px; padding:6px 14px; font-size:13px;}
+.subtabs button.active{background:var(--primary); color:#fff; border-color:var(--primary);}
+.crumbs{font-size:13px; color:var(--muted); margin-bottom:14px;}
+.crumbs b{color:var(--text);}
+.small-grid{display:flex; gap:8px;}
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <div class="login-card">
+    <h1>MeuERP</h1>
+    <div class="sub">Sistema de Gestão</div>
+    <label>Usuário</label>
+    <input id="loginUser" autocomplete="username">
+    <label>Senha</label>
+    <input id="loginPass" type="password" autocomplete="current-password">
+    <button class="btn" id="loginBtn">Entrar</button>
+  </div>
+</div>
+
+<div id="app">
+  <header>
+    <div class="brand">MeuERP</div>
+    <nav id="navMenu">
+      <a href="#" class="toplink" data-view="home">Início</a>
+      <a href="#" class="toplink" data-view="clientes">Clientes</a>
+      <a href="#" class="toplink" data-view="produtos">Produtos/Estoque</a>
+      <a href="#" class="toplink" data-view="pedidos">Pedidos/Vendas</a>
+      <a href="#" class="toplink" data-view="usuarios" id="navUsuarios">Usuários</a>
+      <div class="dropdown" id="navEstrutura">
+        <a>Estrutura ▾</a>
+        <div class="dropdown-menu">
+          <a href="#" data-view="mandantes">Mandantes</a>
+          <a href="#" data-view="empresas">Empresas</a>
+          <a href="#" data-view="centros">Centros</a>
+          <a href="#" data-view="depositos">Depósitos</a>
+          <a href="#" data-view="orgvendas">Org. Vendas</a>
+          <a href="#" data-view="orgcompras">Org. Compras</a>
+          <a href="#" data-view="estoque">Estoque</a>
+        </div>
+      </div>
+    </nav>
+    <div class="header-right">
+      <span id="userLabel"></span>
+      <button id="logoutBtn">Sair</button>
+    </div>
+  </header>
+  <main id="mainContent"></main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API='';
+let token=null, usuario=null, selectedId=null, view='home';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtMoney=v=>(v??0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtDate=s=>{const d=new Date(s);return isNaN(d)?s:d.toLocaleDateString('pt-BR');};
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+function toast(msg,tipo='success'){const t=$('toast');t.textContent=msg;t.className=tipo;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3000);}
+
+async function api(path,opts={}){
+  const headers={'Content-Type':'application/json'};
+  if(token) headers['Authorization']='Bearer '+token;
+  const res=await fetch(API+path,{...opts,headers});
+  if(res.status===401){logout();throw new Error('Sessão expirada');}
+  if(!res.ok){let msg='Erro na requisição';try{const b=await res.json();if(b.mensagem)msg=b.mensagem;}catch{}throw new Error(msg);}
+  if(res.status===204)return null;
+  const ct=res.headers.get('content-type')||'';
+  return ct.includes('json')?res.json():null;
+}
+
+async function login(){
+  try{
+    const data=await fetch(API+'/api/Auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({login:$('loginUser').value.trim(),senha:$('loginPass').value})});
+    if(!data.ok){const b=await data.json().catch(()=>({}));throw new Error(b.mensagem||'Login ou senha inválidos.');}
+    const r=await data.json();
+    token=r.token;usuario=r;
+    sessionStorage.setItem('meuerp_token',token);sessionStorage.setItem('meuerp_user',JSON.stringify(usuario));
+    showApp();
+  }catch(e){toast(e.message,'error');}
+}
+function logout(){
+  token=null;usuario=null;
+  sessionStorage.removeItem('meuerp_token');sessionStorage.removeItem('meuerp_user');
+  $('loginView').style.display='flex';$('app').style.display='none';
+}
+function showApp(){
+  $('loginView').style.display='none';$('app').style.display='block';
+  $('userLabel').textContent='Usuário: '+usuario.nome+(usuario.admin?' (admin)':'');
+  $('navUsuarios').style.display=usuario.admin?'':'none';
+  navigate('home');
+}
+
+document.querySelectorAll('#navMenu .toplink').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();navigate(a.dataset.view);}));
+document.querySelectorAll('#navMenu .dropdown-menu a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();navigate(a.dataset.view);}));
+
+function marcaNav(v){
+  document.querySelectorAll('#navMenu .toplink').forEach(a=>a.classList.toggle('active',a.dataset.view===v));
+  document.querySelectorAll('#navMenu .dropdown-menu a').forEach(a=>a.classList.toggle('active',a.dataset.view===v));
+}
+function navigate(v){
+  view=v;selectedId=null;marcaNav(v);
+  const r={home:renderHome,clientes:renderClientes,produtos:renderProdutos,pedidos:renderPedidos,usuarios:renderUsuarios,
+    mandantes:renderMandantes,empresas:renderEmpresas,centros:renderCentros,depositos:renderDepositos,orgvendas:renderOrgVendas,orgcompras:renderOrgCompras,estoque:renderEstoque};
+  (r[v]||renderHome)();
+}
+
+function renderCrumbs(map){return '<div class="crumbs">'+Object.entries(map).map(([k,v])=>'<b>'+esc(v)+'</b>').join(' &raquo; ')+'</div>';}
+
+function renderHome(){
+  $('mainContent').innerHTML='<div class="panel"><div class="welcome">Bem-vindo ao MeuERP!<br>Selecione um módulo no menu acima.<br><br><span style="font-size:14px">Mandante &raquo; Empresa &raquo; Centro &raquo; Depósito &raquo; Org. Vendas/Compras</span></div></div>';
+}
+
+/* ============ ESTRUTURA ORGANIZACIONAL (CRUD genérico) ============ */
+const STRUCT_CONFIG={
+  mandantes:{label:'Mandante',plural:'Mandantes',api:'/api/Mandantes',
+    fields:[{k:'codigo',l:'Código'},{k:'nome',l:'Nome *'},{k:'razaoSocial',l:'Razão Social',full:true},{k:'cnpj',l:'CNPJ'},{k:'endereco',l:'Endereço',full:true}],
+    cols:[['codigo','Código'],['nome','Nome'],['cnpj','CNPJ']]},
+  empresas:{label:'Empresa',plural:'Empresas',api:'/api/Empresas',
+    fields:[{k:'codigo',l:'Código'},{k:'nomeFantasia',l:'Nome Fantasia *'},{k:'mandanteId',l:'Mandante',select:'mandantes'},{k:'razaoSocial',l:'Razão Social',full:true},{k:'cnpj',l:'CNPJ'},{k:'regimeTributario',l:'Regime Tributário'},{k:'endereco',l:'Endereço',full:true}],
+    cols:[['codigo','Código'],['nomeFantasia','Nome'],['mandanteNome','Mandante'],['cnpj','CNPJ']]},
+  centros:{label:'Centro',plural:'Centros',api:'/api/Centros',
+    fields:[{k:'codigo',l:'Código'},{k:'nome',l:'Nome *'},{k:'empresaId',l:'Empresa',select:'empresas'},{k:'tipo',l:'Tipo'},{k:'endereco',l:'Endereço',full:true}],
+    cols:[['codigo','Código'],['nome','Nome'],['empresaNome','Empresa'],['tipo','Tipo']]},
+  depositos:{label:'Depósito',plural:'Depósitos',api:'/api/Depositos',
+    fields:[{k:'codigo',l:'Código'},{k:'nome',l:'Nome *'},{k:'centroId',l:'Centro',select:'centros'},{k:'tipo',l:'Tipo'},{k:'endereco',l:'Endereço',full:true}],
+    cols:[['codigo','Código'],['nome','Nome'],['centroNome','Centro'],['tipo','Tipo']]},
+  orgvendas:{label:'Org. Vendas',plural:'Organizações de Vendas',api:'/api/OrganizacoesVendas',
+    fields:[{k:'codigo',l:'Código'},{k:'nome',l:'Nome *'},{k:'empresaId',l:'Empresa',select:'empresas'},{k:'moeda',l:'Moeda'}],
+    cols:[['codigo','Código'],['nome','Nome'],['empresaNome','Empresa'],['moeda','Moeda']]},
+  orgcompras:{label:'Org. Compras',plural:'Organizações de Compras',api:'/api/OrganizacoesCompras',
+    fields:[{k:'codigo',l:'Código'},{k:'nome',l:'Nome *'},{k:'empresaId',l:'Empresa',select:'empresas'},{k:'moeda',l:'Moeda'}],
+    cols:[['codigo','Código'],['nome','Nome'],['empresaNome','Empresa'],['moeda','Moeda']]},
+};
+let selectCache={};
+
+function renderGenerico(v,crumb){
+  const cfg=STRUCT_CONFIG[v];
+  $('mainContent').innerHTML=`${renderCrumbs({'Início':'Início',crumb:crumb})}
+  <div class="panel">
+    <div class="toolbar">
+      <button class="btn" data-act="novo">Novo</button>
+      <button class="btn ghost" data-act="editar">Editar</button>
+      <button class="btn danger" data-act="excluir">Excluir</button>
+    </div>
+    <table><thead><tr>${cfg.cols.map(c=>'<th>'+c[1]+'</th>').join('')}<th></th></tr></thead>
+    <tbody id="tb"></tbody></table>
+  </div>`;
+  document.querySelector('.panel').addEventListener('click',e=>{
+    const el=e.target.closest('[data-act]');if(!el)return;
+    const act=el.dataset.act;
+    if(act==='novo')novoGenerico(v,cfg);
+    else if(act==='editar')editarGenerico(v,cfg);
+    else if(act==='excluir')excluirGenerico(v,cfg);
+  });
+  carregarGenerico(v,cfg);
+}
+async function carregarGenerico(v,cfg){
+  const tb=$('tb');
+  try{
+    const lista=await api(cfg.api);
+    if(!lista.length){tb.innerHTML='<tr><td colspan="'+cfg.cols.length+'" class="empty">Nenhum registro.</td></tr>';return;}
+    tb.innerHTML=lista.map(r=>`<tr data-id="${r.id}" class="${selectedId===r.id?'selected':''}" onclick="selectRow(this)">
+      ${cfg.cols.map(c=>'<td>'+esc(r[c[0]])+'</td>').join('')}<td class="num">${r.id}</td>
+    </tr>`).join('');
+  }catch(e){toast(e.message,'error');}
+}
+async function carregarSelects(cfg){
+  const needs=cfg.fields.filter(f=>f.select);
+  if(!needs.length)return;
+  for(const f of needs){
+    if(selectCache[f.select]!==undefined)continue;
+    const endpoints={mandantes:'/api/Mandantes',empresas:'/api/Empresas',centros:'/api/Centros',depositos:'/api/Depositos',orgvendas:'/api/OrganizacoesVendas',orgcompras:'/api/OrganizacoesCompras'};
+    selectCache[f.select]=await api(endpoints[f.select]);
+  }
+}
+function fieldHtml(f,val,opts){
+  if(f.select){
+    const list=selectCache[f.select]||[];
+    const labelKey=f.select==='empresas'?'nomeFantasia':f.select==='mandantes'?'nome':f.select==='centros'?'nome':f.select==='depositos'?'nome':'nome';
+    return `<select id="f_${f.k}"><option value="">-- Selecione --</option>${list.map(o=>`<option value="${o.id}" ${Number(val)===Number(o.id)?'selected':''}>${esc(o.codigo||'')} - ${esc(o[labelKey])}</option>`).join('')}</select>`;
+  }
+  return `<input id="f_${f.k}" value="${esc(val??'')}">`;
+}
+function novoGenerico(v,cfg){openStructModal(v,cfg,null);}
+async function editarGenerico(v,cfg){
+  if(!selectedId)return toast('Selecione um registro.','error');
+  const lista=await api(cfg.api);
+  const rec=lista.find(x=>x.id===selectedId);
+  if(rec)openStructModal(v,cfg,rec);
+}
+async function excluirGenerico(v,cfg){
+  if(!selectedId)return toast('Selecione um registro.','error');
+  if(!confirm('Excluir este registro?'))return;
+  try{await api(cfg.api+'/'+selectedId,{method:'DELETE'});toast('Registro excluído.');selectedId=null;carregarGenerico(v,cfg);}catch(e){toast(e.message,'error');}
+}
+async function openStructModal(v,cfg,rec){
+  await carregarSelects(cfg);
+  criarModal(v,`<h2>${rec?'Editar':'Novo'} ${cfg.label}</h2>
+  <div class="form-grid">
+    ${cfg.fields.map(f=>`<div class="${f.full?'full':''}"><label>${f.l}</label>${fieldHtml(f,rec?rec[f.k]:null)}</div>`).join('')}
+  </div>
+  <div class="modal-actions">
+    <button class="btn ghost" onclick="fecharModal('${v}')">Cancelar</button>
+    <button class="btn" onclick="salvarStruct('${v}','${cfg.api}',${rec?rec.id:'null'})">Salvar</button>
+  </div>`);
+}
+async function salvarStruct(v,apiPath,id){
+  const cfg=STRUCT_CONFIG[v];
+  const body={};
+  for(const f of cfg.fields){
+    body[f.k]=$('f_'+f.k).value.trim();
+    if(f.select && body[f.k])body[f.k]=Number(body[f.k]);
+  }
+  const nomeCampo=v==='empresas'?'nomeFantasia':'nome';
+  if(!body[nomeCampo])return toast('Preencha o campo Nome.','error');
+  try{
+    if(id)await api(apiPath+'/'+id,{method:'PUT',body:JSON.stringify(body)});
+    else await api(apiPath,{method:'POST',body:JSON.stringify(body)});
+    fecharModal(v);toast(cfg.label+' salvo.');carregarGenerico(v,cfg);
+  }catch(e){toast(e.message,'error');}
+}
+const renderMandantes=()=>renderGenerico('mandantes','Mandante');
+const renderEmpresas=()=>renderGenerico('empresas','Empresa');
+const renderCentros=()=>renderGenerico('centros','Centro');
+const renderDepositos=()=>renderGenerico('depositos','Depósito');
+const renderOrgVendas=()=>renderGenerico('orgvendas','Org. Vendas');
+const renderOrgCompras=()=>renderGenerico('orgcompras','Org. Compras');
+
+/* ============ CLIENTES ============ */
+async function renderClientes(){
+  $('mainContent').innerHTML=`${renderCrumbs({'Início':'Início','Clientes':'Clientes'})}
+  <div class="panel">
+    <div class="toolbar">
+      <button class="btn" data-act="novo">Novo</button>
+      <button class="btn ghost" data-act="editar">Editar</button>
+      <button class="btn danger" data-act="excluir">Excluir</button>
+    </div>
+    <table><thead><tr><th>Nome</th><th>CPF/CNPJ</th><th>E-mail</th><th>Telefone</th><th>Endereço</th></tr></thead>
+    <tbody id="tb"></tbody></table>
+  </div>`;
+  document.querySelector('.panel').addEventListener('click',e=>{
+    const el=e.target.closest('[data-act]');if(!el)return;
+    if(el.dataset.act==='novo')novoCliente();
+    else if(el.dataset.act==='editar')editarCliente();
+    else if(el.dataset.act==='excluir')excluirCliente();
+  });
+  carregarClientes();
+}
+async function carregarClientes(){
+  const tb=$('tb');
+  try{
+    const lista=await api('/api/Clientes');
+    if(!lista.length){tb.innerHTML='<tr><td colspan="5" class="empty">Nenhum cliente cadastrado.</td></tr>';return;}
+    tb.innerHTML=lista.map(c=>`<tr data-id="${c.id}" class="${selectedId===c.id?'selected':''}" onclick="selectRow(this)">
+      <td>${esc(c.nome)}</td><td>${esc(c.cpfCnpj)}</td><td>${esc(c.email)}</td><td>${esc(c.telefone)}</td><td>${esc(c.endereco)}</td></tr>`).join('');
+  }catch(e){toast(e.message,'error');}
+}
+async function novoCliente(){openClienteModal(null);}
+async function editarCliente(){
+  if(!selectedId)return toast('Selecione um cliente.','error');
+  const lista=await api('/api/Clientes');
+  const c=lista.find(x=>x.id===selectedId);if(c)openClienteModal(c);
+}
+async function excluirCliente(){
+  if(!selectedId)return toast('Selecione um cliente.','error');
+  if(!confirm('Excluir este cliente?'))return;
+  try{await api('/api/Clientes/'+selectedId,{method:'DELETE'});toast('Cliente excluído.');selectedId=null;carregarClientes();}catch(e){toast(e.message,'error');}
+}
+function openClienteModal(c){
+  criarModal('cliente',`<h2>${c?'Editar':'Novo'} Cliente</h2>
+  <div class="form-grid">
+    <div class="full"><label>Nome *</label><input id="cNome" value="${esc(c?.nome||'')}"></div>
+    <div><label>CPF/CNPJ</label><input id="cCpf" value="${esc(c?.cpfCnpj||'')}"></div>
+    <div><label>E-mail</label><input id="cEmail" value="${esc(c?.email||'')}"></div>
+    <div><label>Telefone</label><input id="cTel" value="${esc(c?.telefone||'')}"></div>
+    <div><label>Endereço</label><input id="cEnd" value="${esc(c?.endereco||'')}"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn ghost" onclick="fecharModal('cliente')">Cancelar</button>
+    <button class="btn" onclick="salvarCliente(${c?c.id:'null'})">Salvar</button>
+  </div>`);
+}
+async function salvarCliente(id){
+  const body={nome:$('cNome').value.trim(),cpfCnpj:$('cCpf').value.trim(),email:$('cEmail').value.trim(),telefone:$('cTel').value.trim(),endereco:$('cEnd').value.trim()};
+  if(!body.nome)return toast('Informe o nome do cliente.','error');
+  try{
+    if(id)await api('/api/Clientes/'+id,{method:'PUT',body:JSON.stringify(body)});
+    else await api('/api/Clientes',{method:'POST',body:JSON.stringify(body)});
+    fecharModal('cliente');toast('Cliente salvo.');carregarClientes();
+  }catch(e){toast(e.message,'error');}
+}
+
+/* ============ PRODUTOS / ESTOQUE ============ */
+let prodTab='lista';
+async function renderProdutos(){
+  $('mainContent').innerHTML=`${renderCrumbs({'Início':'Início','Produtos':'Produtos/Estoque'})}
+  <div class="panel">
+    <div class="subtabs">
+      <button class="${prodTab==='lista'?'active':''}" data-tab="lista">Produtos</button>
+      <button class="${prodTab==='estoque'?'active':''}" data-tab="estoque">Estoque por Depósito</button>
+    </div>
+    <div id="prodArea"></div>
+  </div>`;
+  document.querySelector('.subtabs').addEventListener('click',e=>{
+    const el=e.target.closest('[data-tab]');if(!el)return;
+    prodTab=el.dataset.tab;renderProdutos();
+  });
+  if(prodTab==='lista')renderProdLista();else renderEstoqueGeral();
+}
+async function renderProdLista(){
+  $('prodArea').innerHTML=`<div class="toolbar">
+    <button class="btn" data-act="novo">Novo</button>
+    <button class="btn ghost" data-act="editar">Editar</button>
+    <button class="btn danger" data-act="excluir">Excluir</button>
+  </div>
+  <table><thead><tr><th>Código</th><th>Nome</th><th class="num">Preço venda</th><th class="num">Preço custo</th><th class="num">Estoque total</th></tr></thead>
+  <tbody id="tb"></tbody></table>`;
+  document.getElementById('prodArea').addEventListener('click',e=>{
+    const el=e.target.closest('[data-act]');if(!el)return;
+    if(el.dataset.act==='novo')novoProduto();
+    else if(el.dataset.act==='editar')editarProduto();
+    else if(el.dataset.act==='excluir')excluirProduto();
+  });
+  const tb=$('tb');
+  try{
+    const lista=await api('/api/Produtos');
+    if(!lista.length){tb.innerHTML='<tr><td colspan="5" class="empty">Nenhum produto.</td></tr>';return;}
+    tb.innerHTML=lista.map(p=>`<tr data-id="${p.id}" class="${selectedId===p.id?'selected':''}" onclick="selectRow(this)">
+      <td>${esc(p.codigo)}</td><td>${esc(p.nome)}</td><td class="num">${fmtMoney(p.preco)}</td><td class="num">${fmtMoney(p.custo)}</td><td class="num">${p.estoque}</td></tr>`).join('');
+  }catch(e){toast(e.message,'error');}
+}
+async function renderEstoqueGeral(){
+  $('prodArea').innerHTML=`<div class="toolbar">
+    <span style="color:var(--muted)">Estoque físico por produto &amp; depósito</span>
+  </div>
+  <table><thead><tr><th>Código Produto</th><th>Produto</th><th>Depósito</th><th class="num">Quantidade</th></tr></thead>
+  <tbody id="tb"></tbody></table>`;
+  const tb=$('tb');
+  try{
+    const lista=await api('/api/Estoque');
+    if(!lista.length){tb.innerHTML='<tr><td colspan="4" class="empty">Nenhum estoque registrado.</td></tr>';return;}
+    const produtos=await api('/api/Produtos');
+    const prodMap={};produtos.forEach(p=>prodMap[p.id]=p);
+    tb.innerHTML=lista.map(e=>`<tr>
+      <td>${esc(prodMap[e.produtoId]?.codigo||'')}</td><td>${esc(e.produtoNome)}</td><td>${esc(e.depositoNome)}</td><td class="num">${e.quantidade}</td></tr>`).join('');
+  }catch(e){toast(e.message,'error');}
+}
+async function novoProduto(){openProdutoModal(null);}
+async function editarProduto(){
+  if(!selectedId)return toast('Selecione um produto.','error');
+  const lista=await api('/api/Produtos');
+  const p=lista.find(x=>x.id===selectedId);if(p)openProdutoModal(p);
+}
+async function excluirProduto(){
+  if(!selectedId)return toast('Selecione um produto.','error');
+  if(!confirm('Excluir este produto?'))return;
+  try{await api('/api/Produtos/'+selectedId,{method:'DELETE'});toast('Produto excluído.');selectedId=null;renderProdutos();}catch(e){toast(e.message,'error');}
+}
+async function openProdutoModal(p){
+  const depositos=await api('/api/Depositos').catch(()=>[]);
+  let estoques={};
+  if(p) estoques = await api('/api/Estoque/produto/'+p.id).catch(()=>[]);
+  const depositoPadrao=depositos.find(d=>d.id===Number(estoques[0]?.depositoId))||depositos[0];
+  const estoqueAtual = depositoPadrao ? (estoques.find(e=>e.depositoId===depositoPadrao.id)?.quantidade??0) : 0;
+  const selDeposito=depositos.length>1
+    ? `<select id="pDeposito">${depositos.map(d=>`<option value="${d.id}" ${d.id===depositoPadrao?.id?'selected':''}>${esc(d.codigo||d.nome)} - ${esc(d.nome)}</option>`).join('')}</select>`
+    : `<div class="form-hint">${depositoPadrao?esc(depositoPadrao.nome):'Nenhum depósito cadastrado'}</div>`;
+  criarModal('produto',`<h2>${p?'Editar':'Novo'} Produto</h2>
+  <div class="form-grid">
+    <div><label>Código</label><input id="pCod" value="${esc(p?.codigo||'')}"></div>
+    <div><label>Nome *</label><input id="pNome" value="${esc(p?.nome||'')}"></div>
+    <div><label>Preço venda</label><input id="pPreco" value="${(p?.preco??0).toString().replace('.',',')}"></div>
+    <div><label>Preço custo</label><input id="pCusto" value="${(p?.custo??0).toString().replace('.',',')}"></div>
+    <div><label>Depósito</label>${selDeposito}</div>
+    <div><label>Estoque</label><input id="pEstoqueTotal" type="number" value="${estoqueAtual}" min="0" ${!depositoPadrao?'disabled':''}></div>
+  </div>
+  <div class="form-hint">${depositoPadrao?'O estoque é gravado no depósito selecionado acima.':'Cadastre um depósito primeiro (menu Estrutura).'}</div>
+  <div class="modal-actions">
+    <button class="btn ghost" onclick="fecharModal('produto')">Cancelar</button>
+    <button class="btn" onclick="salvarProduto(${p?p.id:'null'})">Salvar</button>
+  </div>`);
+}
+async function salvarProduto(id){
+  const body={codigo:$('pCod').value.trim(),nome:$('pNome').value.trim(),
+    preco:parseFloat(($('pPreco').value||'0').replace(',','.'))||0,
+    custo:parseFloat(($('pCusto').value||'0').replace(',','.'))||0};
+  if(!body.nome)return toast('Informe o nome do produto.','error');
+  if(body.preco<0||body.custo<0)return toast('Valores não podem ser negativos.','error');
+  const depositoSel=$('pDeposito');
+  const depositoId=depositoSel?Number(depositoSel.value):0;
+  const estoqueInput=$('pEstoqueTotal');
+  const qtd=estoqueInput?Number(estoqueInput.value):0;
+  if(estoqueInput && !depositoId)return toast('Nenhum depósito disponível para gravar o estoque.','error');
+  try{
+    let produtoId=id;
+    if(id)await api('/api/Produtos/'+id,{method:'PUT',body:JSON.stringify(body)});
+    else produtoId=(await api('/api/Produtos',{method:'POST',body:JSON.stringify(body)})).id;
+    if(estoqueInput && !estoqueInput.disabled)
+      await api('/api/Estoque',{method:'PUT',body:JSON.stringify({produtoId,depositoId,quantidade:qtd})});
+    fecharModal('produto');toast('Produto salvo.');renderProdutos();
+  }catch(e){toast(e.message,'error');}
+}
+
+/* ============ ESTOQUE (gestão) ============ */
+async function renderEstoque(){
+  $('mainContent').innerHTML=`${renderCrumbs({'Início':'Início','Estoque':'Estoque'})}
+  <div class="panel">
+    <div class="toolbar">
+      <div class="small-grid">
+        <select id="eqProduto" style="min-width:240px"><option value="">-- Produto --</option></select>
+        <select id="eqDeposito" style="min-width:240px"><option value="">-- Depósito --</option></select>
+        <input id="eqQtd" type="number" style="width:110px" placeholder="Quantidade" value="0" min="0">
+      </div>
+      <button class="btn" onclick="definirEstoque()">Definir Estoque</button>
+      <button class="btn ghost" onclick="consultarEstoque()">Consultar</button>
+    </div>
+    <div id="eqResultado"><div class="empty">Carregando...</div></div>
+  </div>`;
+  await carregarSeletoresEstoque();
+  consultarEstoque();
+}
+async function carregarSeletoresEstoque(){
+  const selP=$('eqProduto'),selD=$('eqDeposito');
+  try{
+    const produtos=await api('/api/Produtos');
+    selP.innerHTML='<option value="">-- Produto --</option>'+produtos.map(p=>`<option value="${p.id}">${esc(p.codigo||p.nome)} - ${esc(p.nome)} (total: ${p.estoque})</option>`).join('');
+  }catch(e){toast('Erro ao carregar produtos: '+e.message,'error');}
+  try{
+    const depositos=await api('/api/Depositos');
+    selD.innerHTML='<option value="">-- Depósito --</option>'+depositos.map(d=>`<option value="${d.id}">${esc(d.codigo||d.nome)} - ${esc(d.nome)}</option>`).join('');
+  }catch(e){toast('Erro ao carregar depósitos: '+e.message,'error');}
+}
+async function definirEstoque(){
+  const produtoId=Number($('eqProduto').value),depositoId=Number($('eqDeposito').value),qtd=Number($('eqQtd').value);
+  if(!produtoId||!depositoId)return toast('Selecione produto e depósito.','error');
+  if(qtd<0)return toast('Quantidade não pode ser negativa.','error');
+  try{
+    await api('/api/Estoque',{method:'PUT',body:JSON.stringify({produtoId,depositoId,quantidade:qtd})});
+    toast('Estoque definido.');consultarEstoque();
+  }catch(e){toast(e.message,'error');}
+}
+async function consultarEstoque(){
+  const area=$('eqResultado');
+  try{
+    const dados=await api('/api/Estoque');
+    if(!dados.length){area.innerHTML='<div class="empty">Nenhum estoque.</div>';return;}
+    area.innerHTML=`<table><thead><tr><th>Produto</th><th>Depósito</th><th class="num">Quantidade</th><th></th></tr></thead>
+      <tbody>${dados.map(e=>`<tr><td>${esc(e.produtoNome)}</td><td>${esc(e.depositoNome)}</td><td class="num">${e.quantidade}</td>
+      <td><button class="btn small danger" onclick="zeraEstoque(${e.produtoId},${e.depositoId})">Zerar</button></td></tr>`).join('')}</tbody></table>`;
+  }catch(e){toast(e.message,'error');}
+}
+async function zeraEstoque(produtoId,depositoId){
+  try{await api('/api/Estoque',{method:'PUT',body:JSON.stringify({produtoId,depositoId,quantidade:0})});toast('Estoque zerado.');consultarEstoque();}catch(e){toast(e.message,'error');}
+}
+
+/* ============ PEDIDOS ============ */
+async function renderPedidos(){
+  $('mainContent').innerHTML=`${renderCrumbs({'Início':'Início','Pedidos':'Pedidos/Vendas'})}
+  <div class="panel">
+    <div class="toolbar">
+      <button class="btn" data-act="novo">Novo Pedido</button>
+      <button class="btn danger" data-act="excluir">Excluir</button>
+    </div>
+    <table><thead><tr><th>Nº</th><th>Cliente</th><th>Empresa</th><th>Centro</th><th>Depósito</th><th>Org. Vendas</th><th>Data</th><th>Status</th><th class="num">Total</th></tr></thead>
+    <tbody id="tb"></tbody></table>
+    <div id="itensArea"></div>
+  </div>`;
+  document.querySelector('.panel').addEventListener('click',e=>{
+    const el=e.target.closest('[data-act]');if(!el)return;
+    if(el.dataset.act==='novo')novoPedido();
+    else if(el.dataset.act==='excluir')excluirPedido();
+  });
+  carregarPedidos();
+}
+async function carregarPedidos(){
+  const tb=$('tb');
+  try{
+    const lista=await api('/api/Pedidos');
+    if(!lista.length){tb.innerHTML='<tr><td colspan="9" class="empty">Nenhum pedido.</td></tr>';return;}
+    tb.innerHTML=lista.map(p=>`<tr data-id="${p.id}" class="${selectedId===p.id?'selected':''}" onclick="selectRow(this)">
+      <td>${p.id}</td><td>${esc(p.clienteNome)}</td><td>${esc(p.empresaNome)}</td>
+      <td>${esc(p.centroNome)}</td><td>${esc(p.depositoNome)}</td><td>${esc(p.organizacaoVendasNome)}</td>
+      <td>${fmtDate(p.data)}</td><td>${esc(p.status)}</td><td class="num">${fmtMoney(p.total)}</td></tr>`).join('');
+    if(selectedId)carregarItensPedido(selectedId);
+  }catch(e){toast(e.message,'error');}
+}
+async function carregarItensPedido(pedidoId){
+  const area=$('itensArea');
+  try{
+    const d=await api('/api/Pedidos/'+pedidoId);
+    area.innerHTML=`<div class="total-bar"><span>Itens do pedido nº ${d.id} — ${esc(d.clienteNome)} (${esc(d.depositoNome)})</span><span>${fmtMoney(d.total)}</span></div>
+      <table><thead><tr><th>Produto</th><th class="num">Preço unit.</th><th class="num">Qtd</th><th class="num">Subtotal</th></tr></thead>
+      <tbody>${d.itens.map(i=>`<tr><td>${esc(i.produtoNome)}</td><td class="num">${fmtMoney(i.precoUnitario)}</td><td class="num">${i.quantidade}</td><td class="num">${fmtMoney(i.subtotal)}</td></tr>`).join('')}</tbody></table>`;
+  }catch(e){area.innerHTML='';}
+}
+async function novoPedido(){
+  const [clientes,empresas,centros,depositos,orgvendas,produtos]=await Promise.all([
+    api('/api/Clientes'),api('/api/Empresas'),api('/api/Centros'),api('/api/Depositos'),api('/api/OrganizacoesVendas'),api('/api/Produtos')]);
+  itensPedido=[];
+  criarModal('pedido',`<h2>Novo Pedido</h2>
+  <div class="form-grid">
+    <div class="full"><label>Cliente *</label>
+      <select id="pdCliente"><option value="">-- Selecione --</option>
+      ${clientes.map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('')}</select></div>
+    <div><label>Centro</label>
+      <select id="pdCentro" onchange="filtraDepositos()"><option value="">-- Selecione --</option>
+      ${centros.map(c=>`<option value="${c.id}">${esc(c.codigo||'')} - ${esc(c.nome)}</option>`).join('')}</select></div>
+    <div><label>Depósito (saída)</label>
+      <select id="pdDeposito"><option value="">-- Primeiro o Centro --</option>
+      ${depositos.map(d=>`<option value="${d.id}" data-centro="${d.centroId}">${esc(d.codigo||'')} - ${esc(d.nome)}</option>`).join('')}</select></div>
+    <div><label>Empresa</label>
+      <select id="pdEmpresa"><option value="">-- Selecione --</option>
+      ${empresas.map(e=>`<option value="${e.id}">${esc(e.codigo||'')} - ${esc(e.nomeFantasia)}</option>`).join('')}</select></div>
+    <div><label>Org. Vendas</label>
+      <select id="pdOrgVendas"><option value="">-- Selecione --</option>
+      ${orgvendas.map(v=>`<option value="${v.id}">${esc(v.codigo||'')} - ${esc(v.nome)}</option>`).join('')}</select></div>
+  </div>
+  <div class="pedido-form-row" style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+    <div class="field"><label>Produto</label>
+      <select id="pdProduto"><option value="">-- Selecione --</option>
+      ${produtos.map(p=>`<option value="${p.id}" data-preco="${p.preco}">${esc(p.nome)} (total: ${p.estoque})</option>`).join('')}</select></div>
+    <div class="field"><label>Qtd</label><input id="pdQtd" type="number" value="1" min="1" style="width:90px"></div>
+    <button class="btn ghost" onclick="adicionarItemPedido()">Adicionar</button>
+  </div>
+  <table><thead><tr><th>Produto</th><th class="num">Preço</th><th class="num">Qtd</th><th class="num">Subtotal</th><th></th></tr></thead>
+  <tbody id="pdItensTb"></tbody></table>
+  <div class="pedido-itens-total"><span>Total</span><span id="pdTotal">${fmtMoney(0)}</span></div>
+  <div class="modal-actions">
+    <button class="btn ghost" onclick="fecharModal('pedido')">Cancelar</button>
+    <button class="btn" onclick="salvarPedido()">Salvar Pedido</button>
+  </div>`);
+  atualizarTabelaItens();
+}
+function filtraDepositos(){
+  const centro=Number($('pdCentro').value);
+  const sel=$('pdDeposito');
+  const opts=sel.querySelectorAll('option');
+  opts.forEach(o=>{o.style.display=(!centro||!o.dataset.centro||Number(o.dataset.centro)===centro)?'':'none';});
+  sel.value='';
+}
+let itensPedido=[];
+function adicionarItemPedido(){
+  const sel=$('pdProduto').value;
+  const qtd=parseInt($('pdQtd').value)||1;
+  if(!sel)return toast('Selecione um produto.','error');
+  const opt=$('pdProduto').selectedOptions[0];
+  const prec=parseFloat(opt.dataset.preco)||0;
+  const nome=opt.textContent.replace(/\s*\(total:.*\)$/,'').trim();
+  const existente=itensPedido.find(i=>i.produtoId===Number(sel));
+  if(existente)existente.quantidade+=qtd;
+  else itensPedido.push({produtoId:Number(sel),quantidade:qtd,nome,preco:prec});
+  atualizarTabelaItens();
+}
+function removerItemPedido(i){itensPedido.splice(i,1);atualizarTabelaItens();}
+function atualizarTabelaItens(){
+  const tb=$('pdItensTb');if(!tb)return;
+  if(!itensPedido.length)tb.innerHTML='<tr><td colspan="5" class="empty">Nenhum item.</td></tr>';
+  else tb.innerHTML=itensPedido.map((i,idx)=>`<tr><td>${esc(i.nome)}</td><td class="num">${fmtMoney(i.preco)}</td><td class="num">${i.quantidade}</td>
+    <td class="num">${fmtMoney(i.preco*i.quantidade)}</td><td><button class="btn small danger" onclick="removerItemPedido(${idx})">Remover</button></td></tr>`).join('');
+  $('pdTotal').textContent=fmtMoney(itensPedido.reduce((s,i)=>s+i.preco*i.quantidade,0));
+}
+async function salvarPedido(){
+  const clienteId=Number($('pdCliente').value);
+  const empresaId=Number($('pdEmpresa').value)||0;
+  const centroId=Number($('pdCentro').value)||0;
+  const depositoId=Number($('pdDeposito').value)||0;
+  const orgVendasId=Number($('pdOrgVendas').value)||0;
+  if(!clienteId)return toast('Selecione um cliente.','error');
+  if(!depositoId)return toast('Selecione o depósito de saída.','error');
+  if(!itensPedido.length)return toast('Adicione ao menos um item.','error');
+  try{
+    await api('/api/Pedidos',{method:'POST',body:JSON.stringify({
+      clienteId,empresaId,centroId,depositoId,organizacaoVendasId,
+      itens:itensPedido.map(i=>({produtoId:i.produtoId,quantidade:i.quantidade}))})});
+    fecharModal('pedido');toast('Pedido criado com sucesso.');selectedId=null;carregarPedidos();
+  }catch(e){toast(e.message,'error');}
+}
+async function excluirPedido(){
+  if(!selectedId)return toast('Selecione um pedido.','error');
+  if(!confirm('Excluir este pedido?'))return;
+  try{await api('/api/Pedidos/'+selectedId,{method:'DELETE'});toast('Pedido excluído.');selectedId=null;carregarPedidos();}catch(e){toast(e.message,'error');}
+}
+
+/* ============ USUÁRIOS ============ */
+async function renderUsuarios(){
+  $('mainContent').innerHTML=`${renderCrumbs({'Início':'Início','Usuários':'Usuários'})}
+  <div class="panel">
+    <div class="toolbar">
+      <button class="btn" data-act="novo">Novo</button>
+      <button class="btn danger" data-act="excluir">Excluir</button>
+    </div>
+    <table><thead><tr><th>Nome</th><th>Login</th><th>Admin</th></tr></thead>
+    <tbody id="tb"></tbody></table>
+  </div>`;
+  document.querySelector('.panel').addEventListener('click',e=>{
+    const el=e.target.closest('[data-act]');if(!el)return;
+    if(el.dataset.act==='novo')novoUsuario();
+    else if(el.dataset.act==='excluir')excluirUsuario();
+  });
+  carregarUsuarios();
+}
+async function carregarUsuarios(){
+  const tb=$('tb');
+  try{
+    const lista=await api('/api/Usuarios');
+    if(!lista.length){tb.innerHTML='<tr><td colspan="3" class="empty">Nenhum usuário.</td></tr>';return;}
+    tb.innerHTML=lista.map(u=>`<tr data-id="${u.id}" class="${selectedId===u.id?'selected':''}" onclick="selectRow(this)">
+      <td>${esc(u.nome)}</td><td>${esc(u.login)}</td><td>${u.admin?'Sim':'Não'}</td></tr>`).join('');
+  }catch(e){toast(e.message,'error');}
+}
+async function novoUsuario(){openUsuarioModal();}
+async function excluirUsuario(){
+  if(!selectedId)return toast('Selecione um usuário.','error');
+  if(!confirm('Excluir este usuário?'))return;
+  try{await api('/api/Usuarios/'+selectedId,{method:'DELETE'});toast('Usuário excluído.');selectedId=null;carregarUsuarios();}catch(e){toast(e.message,'error');}
+}
+function openUsuarioModal(){
+  criarModal('usuario',`<h2>Novo Usuário</h2>
+  <div class="form-grid">
+    <div><label>Nome *</label><input id="uNome"></div>
+    <div><label>Login *</label><input id="uLogin"></div>
+    <div><label>Senha * (mín. 4)</label><input id="uSenha" type="password"></div>
+    <div><label>Admin</label><select id="uAdmin"><option value="false">Não</option><option value="true">Sim</option></select></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn ghost" onclick="fecharModal('usuario')">Cancelar</button>
+    <button class="btn" onclick="salvarUsuario()">Salvar</button>
+  </div>`);
+}
+async function salvarUsuario(){
+  const body={nome:$('uNome').value.trim(),login:$('uLogin').value.trim(),senha:$('uSenha').value,admin:$('uAdmin').value==='true'};
+  if(!body.nome||!body.login)return toast('Preencha nome e login.','error');
+  if(body.senha.length<4)return toast('A senha deve ter ao menos 4 caracteres.','error');
+  try{await api('/api/Usuarios',{method:'POST',body:JSON.stringify(body)});fecharModal('usuario');toast('Usuário criado.');carregarUsuarios();}catch(e){toast(e.message,'error');}
+}
+
+/* ============ HELPERS MODAL/TABELA ============ */
+function selectRow(tr){
+  document.querySelectorAll('#tb tr.selected').forEach(x=>x.classList.remove('selected'));
+  tr.classList.add('selected');
+  selectedId=parseInt(tr.dataset.id);
+}
+function criarModal(nome,html){
+  const existente=$('modal'+cap(nome));if(existente)existente.remove();
+  const wrap=document.createElement('div');
+  wrap.id='modal'+cap(nome);wrap.className='modal-backdrop show';
+  wrap.innerHTML='<div class="modal">'+html+'</div>';
+  wrap.addEventListener('click',e=>{if(e.target===wrap)fecharModal(nome);});
+  document.body.appendChild(wrap);
+}
+function fecharModal(nome){const m=$('modal'+cap(nome));if(m)m.remove();}
+
+function init(){
+  $('loginBtn').addEventListener('click',login);
+  $('loginPass').addEventListener('keydown',e=>{if(e.key==='Enter')login();});
+  $('loginUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginPass').focus();});
+  $('logoutBtn').addEventListener('click',logout);
+  const tok=sessionStorage.getItem('meuerp_token'),usr=sessionStorage.getItem('meuerp_user');
+  if(tok&&usr){token=tok;usuario=JSON.parse(usr);showApp();}
+}
+init();
+</script>
+</body>
+</html>

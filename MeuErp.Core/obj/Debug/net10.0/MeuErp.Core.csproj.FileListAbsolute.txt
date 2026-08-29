@@ -1,0 +1,12 @@
+/home/wander/Public/MeuErpApi/MeuErp.Core/bin/Debug/net10.0/MeuErp.Core.deps.json
+/home/wander/Public/MeuErpApi/MeuErp.Core/bin/Debug/net10.0/MeuErp.Core.dll
+/home/wander/Public/MeuErpApi/MeuErp.Core/bin/Debug/net10.0/MeuErp.Core.pdb
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/MeuErp.Core.csproj.AssemblyReference.cache
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/MeuErp.Core.GeneratedMSBuildEditorConfig.editorconfig
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/MeuErp.Core.AssemblyInfoInputs.cache
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/MeuErp.Core.AssemblyInfo.cs
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/MeuErp.Core.csproj.CoreCompileInputs.cache
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/MeuErp.Core.dll
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/refint/MeuErp.Core.dll
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/MeuErp.Core.pdb
+/home/wander/Public/MeuErpApi/MeuErp.Core/obj/Debug/net10.0/ref/MeuErp.Core.dll
