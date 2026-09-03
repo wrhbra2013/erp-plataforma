@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "A+TgWT7j2VU=",
+  "dgSpecHash": "Ir9DbTxMoXQ=",
   "success": true,
-  "projectFilePath": "/home/wander/Public/MeuErpApi/MeuErpApi.csproj",
+  "projectFilePath": "/home/wander/Public/erp-plataforma/MeuErpApi.csproj",
   "expectedPackageFiles": [
     "/home/wander/.nuget/packages/microsoft.aspnetcore.authentication.jwtbearer/10.0.11/microsoft.aspnetcore.authentication.jwtbearer.10.0.11.nupkg.sha512",
     "/home/wander/.nuget/packages/microsoft.bcl.cryptography/10.0.2/microsoft.bcl.cryptography.10.0.2.nupkg.sha512",

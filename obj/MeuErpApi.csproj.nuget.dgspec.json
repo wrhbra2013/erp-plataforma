@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/wander/Public/MeuErpApi/MeuErpApi.csproj": {}
+    "/home/wander/Public/erp-plataforma/MeuErpApi.csproj": {}
   },
   "projects": {
-    "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj": {
+    "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj",
+        "projectUniqueName": "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj",
         "projectName": "MeuErp.Core",
-        "projectPath": "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj",
+        "projectPath": "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj",
         "packagesPath": "/home/wander/.nuget/packages/",
-        "outputPath": "/home/wander/Public/MeuErpApi/MeuErp.Core/obj/",
+        "outputPath": "/home/wander/Public/erp-plataforma/MeuErp.Core/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/wander/.nuget/NuGet/NuGet.Config"
@@ -345,14 +345,14 @@
         }
       }
     },
-    "/home/wander/Public/MeuErpApi/MeuErpApi.csproj": {
+    "/home/wander/Public/erp-plataforma/MeuErpApi.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/wander/Public/MeuErpApi/MeuErpApi.csproj",
+        "projectUniqueName": "/home/wander/Public/erp-plataforma/MeuErpApi.csproj",
         "projectName": "MeuErpApi",
-        "projectPath": "/home/wander/Public/MeuErpApi/MeuErpApi.csproj",
+        "projectPath": "/home/wander/Public/erp-plataforma/MeuErpApi.csproj",
         "packagesPath": "/home/wander/.nuget/packages/",
-        "outputPath": "/home/wander/Public/MeuErpApi/obj/",
+        "outputPath": "/home/wander/Public/erp-plataforma/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/wander/.nuget/NuGet/NuGet.Config"
@@ -368,8 +368,8 @@
             "framework": "net10.0",
             "targetAlias": "net10.0",
             "projectReferences": {
-              "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj": {
-                "projectPath": "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj"
+              "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj": {
+                "projectPath": "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj"
               }
             }
           }

@@ -301,11 +301,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj",
+      "projectUniqueName": "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj",
       "projectName": "MeuErp.Core",
-      "projectPath": "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj",
+      "projectPath": "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj",
       "packagesPath": "/home/wander/.nuget/packages/",
-      "outputPath": "/home/wander/Public/MeuErpApi/MeuErp.Core/obj/",
+      "outputPath": "/home/wander/Public/erp-plataforma/MeuErp.Core/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/wander/.nuget/NuGet/NuGet.Config"

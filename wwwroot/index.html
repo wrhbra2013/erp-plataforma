@@ -137,8 +137,9 @@ th.num{text-align:right;}
 
 <div id="toast"></div>
 
+<script src="config.js"></script>
 <script>
-const API='';
+const API=window.MEUERP_API||'';
 let token=null, usuario=null, selectedId=null, view='home';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "A7r5S8/ITYw=",
+  "dgSpecHash": "nP4RQOKl/Aw=",
   "success": true,
-  "projectFilePath": "/home/wander/Public/MeuErpApi/MeuErp.Core/MeuErp.Core.csproj",
+  "projectFilePath": "/home/wander/Public/erp-plataforma/MeuErp.Core/MeuErp.Core.csproj",
   "expectedPackageFiles": [
     "/home/wander/.nuget/packages/microsoft.data.sqlite/10.0.11/microsoft.data.sqlite.10.0.11.nupkg.sha512",
     "/home/wander/.nuget/packages/microsoft.data.sqlite.core/10.0.11/microsoft.data.sqlite.core.10.0.11.nupkg.sha512",
